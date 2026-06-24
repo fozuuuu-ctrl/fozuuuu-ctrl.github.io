@@ -1,0 +1,536 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>咖啡萃取曲线 · 三象限合并实时绘制</title>
+    <style>
+        * {
+            box-sizing: border-box;
+        }
+        body {
+            margin: 0;
+            min-height: 100vh;
+            background: #f7f6f2;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            font-family: system-ui, -apple-system, sans-serif;
+        }
+        @media (prefers-color-scheme: dark) {
+            body {
+                background: #1e1e1c;
+            }
+        }
+        .card {
+            background: #ffffff;
+            border-radius: 20px;
+            padding: 24px 28px 28px 28px;
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.06);
+            max-width: 720px;
+            width: 100%;
+            margin: 16px;
+            transition: background 0.2s;
+        }
+        @media (prefers-color-scheme: dark) {
+            .card {
+                background: #2a2a28;
+                box-shadow: 0 8px 32px rgba(0, 0, 0, 0.4);
+            }
+        }
+        canvas {
+            width: 100%;
+            max-width: 680px;
+            display: block;
+            border-radius: 12px;
+            background: transparent;
+        }
+        .controls {
+            display: flex;
+            align-items: center;
+            gap: 14px;
+            margin-top: 14px;
+            flex-wrap: wrap;
+        }
+        .controls button {
+            font-size: 13px;
+            padding: 5px 16px;
+            border: 1px solid rgba(0, 0, 0, 0.12);
+            border-radius: 30px;
+            background: #f0efeb;
+            color: #3d3d3a;
+            cursor: pointer;
+            font-weight: 500;
+            transition: all 0.15s;
+            font-family: inherit;
+            line-height: 1.4;
+        }
+        .controls button:hover {
+            background: #e4e3dd;
+            border-color: rgba(0, 0, 0, 0.2);
+        }
+        .controls button:active {
+            transform: scale(0.96);
+        }
+        @media (prefers-color-scheme: dark) {
+            .controls button {
+                background: #3a3a37;
+                border-color: rgba(255, 255, 255, 0.08);
+                color: #d6d4cb;
+            }
+            .controls button:hover {
+                background: #484844;
+            }
+        }
+        #stage-info {
+            font-weight: 500;
+            font-size: 14px;
+            color: #3d3d3a;
+            min-width: 120px;
+        }
+        @media (prefers-color-scheme: dark) {
+            #stage-info {
+                color: #d6d4cb;
+            }
+        }
+        .speed-group {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            margin-left: auto;
+            font-size: 12px;
+            color: #888780;
+        }
+        .speed-group label {
+            margin-right: 2px;
+        }
+        .speed-group button {
+            font-size: 12px;
+            padding: 3px 10px;
+            min-width: 36px;
+            text-align: center;
+            background: transparent;
+            border: 1px solid rgba(0, 0, 0, 0.07);
+            border-radius: 20px;
+            color: #888780;
+            font-weight: 400;
+        }
+        .speed-group button.active {
+            background: #378ADD;
+            border-color: #378ADD;
+            color: #fff;
+            font-weight: 500;
+        }
+        .speed-group button:hover:not(.active) {
+            background: rgba(55, 138, 221, 0.08);
+        }
+        @media (prefers-color-scheme: dark) {
+            .speed-group button {
+                border-color: rgba(255, 255, 255, 0.06);
+                color: #99948a;
+            }
+            .speed-group button.active {
+                background: #378ADD;
+                border-color: #378ADD;
+                color: #fff;
+            }
+            .speed-group button:hover:not(.active) {
+                background: rgba(55, 138, 221, 0.15);
+            }
+        }
+        .hint {
+            font-size: 11px;
+            color: #b0aea6;
+            margin-top: 8px;
+            text-align: center;
+            letter-spacing: 0.3px;
+        }
+        @media (prefers-color-scheme: dark) {
+            .hint {
+                color: #6a6a62;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="card">
+        <canvas id="c" style="width:100%;max-width:680px;display:block"></canvas>
+
+        <div class="controls">
+            <button id="btn">⟳ 重新播放</button>
+            <span id="stage-info" style="font-weight:500;">——</span>
+
+            <div class="speed-group">
+                <label>速度</label>
+                <button data-speed="0.006">0.5×</button>
+                <button data-speed="0.003">1×</button>
+                <button data-speed="0.0015" class="active">2×</button>
+                <button data-speed="0.00075">4×</button>
+                <button data-speed="0.0003">10×</button>
+            </div>
+        </div>
+        <div class="hint">← 点击速度按钮可实时调整播放速率 · 数字越小越慢 →</div>
+    </div>
+
+    <script>
+        // ============ 配置 ============
+        const stages = [
+            { name: '第1段', label: '10s · 5bar', dur: 10, type: 'pressure', bar: 5, flow: null, weightRate: 1.2 },
+            { name: '第2段', label: '20ml · 9bar', dur: 20, type: 'pressure', bar: 9, flow: null, weightRate: 2.0 },
+            { name: '第3段', label: '10s · 5ml/s', dur: 10, type: 'flow', bar: null, flow: 5, weightRate: 1.5 },
+            { name: '第4段', label: '10ml · 6ml/s', dur: 10, type: 'flow', bar: null, flow: 6, weightRate: 1.8 },
+        ];
+        const TOTAL = stages.reduce((s, st) => s + st.dur, 0);
+
+        // ============ Canvas 初始化 ============
+        const cv = document.getElementById('c');
+        const DPR = window.devicePixelRatio || 1;
+        const W = 680,
+            H = 440;
+        cv.width = W * DPR;
+        cv.height = H * DPR;
+        cv.style.width = W + 'px';
+        cv.style.height = H + 'px';
+        const ctx = cv.getContext('2d');
+        ctx.scale(DPR, DPR);
+
+        const L = 52,
+            R = 20,
+            T = 38,
+            B = 52;
+        const CW = W - L - R,
+            CH = H - T - B;
+
+        const BLUE = '#378ADD',
+            RED = '#E24B4A',
+            GREEN = '#3BAD6E';
+
+        // ============ 数据函数 ============
+        function stageStart(i) { let t = 0; for (let j = 0; j < i; j++) t += stages[j].dur; return t; }
+
+        function pressureAt(t) {
+            let acc = 0;
+            for (let i = 0; i < stages.length; i++) {
+                if (stages[i].type !== 'pressure') { acc += stages[i].dur; continue; }
+                if (t <= acc + stages[i].dur) return stages[i].bar;
+                acc += stages[i].dur;
+            }
+            return null;
+        }
+
+        function flowAt(t) {
+            for (let i = 0; i < stages.length; i++) {
+                if (stages[i].type !== 'flow') continue;
+                const s = stageStart(i);
+                if (t >= s && t <= s + stages[i].dur) return stages[i].flow;
+            }
+            return null;
+        }
+
+        function weightAt(t) {
+            let w = 0;
+            for (let i = 0; i < stages.length; i++) {
+                const s = stageStart(i);
+                const e = s + stages[i].dur;
+                if (t <= s) break;
+                const seg = Math.min(t, e) - s;
+                w += seg * stages[i].weightRate;
+            }
+            return w;
+        }
+
+        // ============ 辅助绘图 ============
+        function niceTickInterval(range) {
+            const raw = range / 6;
+            const mag = Math.pow(10, Math.floor(Math.log10(raw)));
+            const norm = raw / mag;
+            let nice;
+            if (norm < 1.5) nice = 1;
+            else if (norm < 3) nice = 2;
+            else if (norm < 7) nice = 5;
+            else nice = 10;
+            return nice * mag;
+        }
+
+        function niceYMax(val) {
+            if (val <= 12) return 12;
+            const int = niceTickInterval(val);
+            return Math.ceil(val / int) * int;
+        }
+
+        // ============ 绘制主函数 ============
+        function draw(upTo) {
+            ctx.clearRect(0, 0, W, H);
+            const isDark = window.matchMedia('(prefers-color-scheme:dark)').matches;
+            const txtColor = isDark ? '#c2c0b6' : '#3d3d3a';
+            const txt2 = isDark ? '#888780' : '#73726c';
+            const borderColor = isDark ? 'rgba(255,255,255,0.15)' : 'rgba(0,0,0,0.15)';
+
+            const xMax = Math.max(upTo, 0.1);
+            const curWeight = weightAt(Math.min(upTo, TOTAL));
+            const yMax = niceYMax(curWeight);
+
+            function xOf(t) { return L + (t / xMax) * CW; }
+
+            function yOf(v) { return T + CH - (v / yMax) * CH; }
+
+            // 标题
+            ctx.font = '13px sans-serif';
+            ctx.fillStyle = txtColor;
+            ctx.textAlign = 'left';
+            ctx.fillText('运行中（三象限合并 · 实时绘制）', L, 22);
+
+            // ========== Y轴单位标签已移除 ==========
+
+            // 坐标轴
+            ctx.strokeStyle = borderColor;
+            ctx.lineWidth = 0.5;
+            ctx.beginPath();
+            ctx.moveTo(L, T);
+            ctx.lineTo(L, T + CH);
+            ctx.stroke();
+            ctx.beginPath();
+            ctx.moveTo(L, T + CH);
+            ctx.lineTo(W - R, T + CH);
+            ctx.stroke();
+
+            // Y 轴网格
+            const yTickInt = yMax <= 12 ? 1 : niceTickInterval(yMax);
+            for (let v = 0; v <= yMax + yTickInt * 0.01; v = parseFloat((v + yTickInt).toFixed(8))) {
+                if (v > yMax + 0.001) break;
+                const y = yOf(v);
+                ctx.strokeStyle = borderColor;
+                ctx.lineWidth = 0.5;
+                ctx.setLineDash([2, 4]);
+                ctx.beginPath();
+                ctx.moveTo(L, y);
+                ctx.lineTo(W - R, y);
+                ctx.stroke();
+                ctx.setLineDash([]);
+                ctx.fillStyle = txt2;
+                ctx.textAlign = 'right';
+                ctx.font = '11px sans-serif';
+                ctx.fillText(Number.isInteger(v) ? v : v.toFixed(1), L - 4, y + 4);
+            }
+
+            // X 轴网格
+            const xTickInt = niceTickInterval(xMax);
+            ctx.font = '10px sans-serif';
+            ctx.fillStyle = txt2;
+            ctx.textAlign = 'center';
+            for (let t = 0; t <= xMax + xTickInt * 0.01; t = parseFloat((t + xTickInt).toFixed(8))) {
+                const x = xOf(t);
+                if (x < L || x > W - R + 1) continue;
+                ctx.strokeStyle = borderColor;
+                ctx.lineWidth = 0.5;
+                ctx.beginPath();
+                ctx.moveTo(x, T + CH);
+                ctx.lineTo(x, T + CH + 4);
+                ctx.stroke();
+                const label = t < 1 ? (t < 0.1 ? t.toFixed(2) : t.toFixed(1)) : Math.round(t) + 's';
+                ctx.fillText(label, x, T + CH + 14);
+            }
+
+            ctx.fillStyle = txt2;
+            ctx.textAlign = 'center';
+            ctx.font = '11px sans-serif';
+            ctx.fillText('← x轴随时间实时延伸，刻度间隔自动扩大 →', L + CW / 2, H - 6);
+
+            // 阶段分界虚线
+            let acc = 0;
+            const divs = [0];
+            stages.forEach(s => { acc += s.dur;
+                divs.push(acc); });
+            divs.forEach((t, i) => {
+                if (t > upTo) return;
+                const x = xOf(t);
+                ctx.strokeStyle = borderColor;
+                ctx.lineWidth = 0.5;
+                ctx.setLineDash([4, 4]);
+                ctx.beginPath();
+                ctx.moveTo(x, T);
+                ctx.lineTo(x, T + CH);
+                ctx.stroke();
+                ctx.setLineDash([]);
+                if (i < stages.length && t + stages[i].dur <= upTo + 1) {
+                    const endX = xOf(Math.min(stageStart(i) + stages[i].dur, upTo));
+                    const mx = (x + endX) / 2;
+                    if (mx > L && mx < W - R) {
+                        ctx.fillStyle = txt2;
+                        ctx.textAlign = 'center';
+                        ctx.font = '10px sans-serif';
+                        ctx.fillText(stages[i].name, mx, T - 18);
+                        ctx.fillText(stages[i].label, mx, T - 7);
+                    }
+                }
+            });
+
+            // 采样绘制三条曲线
+            const STEPS = 600;
+            const pPts = [],
+                fPts = [],
+                wPts = [];
+            let prevBar = null,
+                prevFlow = null;
+            for (let s = 0; s <= STEPS; s++) {
+                const t = upTo * (s / STEPS);
+                const bar = pressureAt(t);
+                if (bar !== null) {
+                    if (prevBar !== null && bar !== prevBar) pPts.push({ t, v: prevBar });
+                    pPts.push({ t, v: bar });
+                    prevBar = bar;
+                }
+                const fl = flowAt(t);
+                if (fl !== null) {
+                    if (prevFlow !== null && fl !== prevFlow) fPts.push({ t, v: prevFlow });
+                    fPts.push({ t, v: fl });
+                    prevFlow = fl;
+                }
+                wPts.push({ t, v: weightAt(t) });
+            }
+
+            function drawPts(pts, color) {
+                if (pts.length < 2) return;
+                ctx.beginPath();
+                ctx.strokeStyle = color;
+                ctx.lineWidth = 2;
+                ctx.setLineDash([]);
+                ctx.moveTo(xOf(pts[0].t), yOf(pts[0].v));
+                for (let i = 1; i < pts.length; i++) ctx.lineTo(xOf(pts[i].t), yOf(pts[i].v));
+                ctx.stroke();
+            }
+            drawPts(pPts, BLUE);
+            drawPts(fPts, RED);
+            drawPts(wPts, GREEN);
+
+            // 当前点
+            const cu = Math.min(upTo, TOTAL);
+            const pb = pressureAt(cu),
+                pf = flowAt(cu),
+                pw = weightAt(cu);
+            if (pb !== null) { ctx.beginPath();
+                ctx.arc(xOf(cu), yOf(pb), 4, 0, Math.PI * 2);
+                ctx.fillStyle = BLUE;
+                ctx.fill(); }
+            if (pf !== null) { ctx.beginPath();
+                ctx.arc(xOf(cu), yOf(pf), 4, 0, Math.PI * 2);
+                ctx.fillStyle = RED;
+                ctx.fill(); }
+            ctx.beginPath();
+            ctx.arc(xOf(cu), yOf(pw), 4, 0, Math.PI * 2);
+            ctx.fillStyle = GREEN;
+            ctx.fill();
+
+            // 图例
+            const lx = L + 10,
+                ly = T + CH + 30;
+            ctx.lineWidth = 2;
+            ctx.setLineDash([]);
+            ctx.strokeStyle = BLUE;
+            ctx.beginPath();
+            ctx.moveTo(lx, ly);
+            ctx.lineTo(lx + 20, ly);
+            ctx.stroke();
+            ctx.fillStyle = txt2;
+            ctx.textAlign = 'left';
+            ctx.font = '11px sans-serif';
+            ctx.fillText('压力（实时）', lx + 24, ly + 4);
+
+            ctx.strokeStyle = RED;
+            ctx.beginPath();
+            ctx.moveTo(lx + 110, ly);
+            ctx.lineTo(lx + 130, ly);
+            ctx.stroke();
+            ctx.fillText('流速（实时）', lx + 134, ly + 4);
+
+            ctx.strokeStyle = GREEN;
+            ctx.beginPath();
+            ctx.moveTo(lx + 220, ly);
+            ctx.lineTo(lx + 240, ly);
+            ctx.stroke();
+            ctx.fillText('液重（实时）', lx + 244, ly + 4);
+
+            ctx.strokeStyle = borderColor;
+            ctx.setLineDash([4, 4]);
+            ctx.beginPath();
+            ctx.moveTo(lx + 340, ly);
+            ctx.lineTo(lx + 360, ly);
+            ctx.stroke();
+            ctx.setLineDash([]);
+            ctx.fillText('阶段分界', lx + 364, ly + 4);
+        }
+
+        // ============ 动画控制 ============
+        let animId = null;
+        let elapsed = 0;
+        let currentSpeed = 0.0015; // 默认 2× （数值越小越慢）
+        let lastTimestamp = null;
+        let isPlaying = false;
+
+        function stageLabel(t) {
+            let acc = 0;
+            for (let i = 0; i < stages.length; i++) {
+                acc += stages[i].dur;
+                if (t < acc) return stages[i].name + '（' + (stages[i].type === 'pressure' ? '压力' : '流速') + '）';
+            }
+            return '制作完成 ✓';
+        }
+
+        function animate() {
+            if (animId) cancelAnimationFrame(animId);
+            elapsed = 0;
+            lastTimestamp = null;
+            isPlaying = true;
+
+            function frame(ts) {
+                if (!isPlaying) return;
+                if (lastTimestamp === null) lastTimestamp = ts;
+                const delta = ts - lastTimestamp;
+                lastTimestamp = ts;
+                // currentSpeed 单位: 秒/毫秒
+                elapsed += delta * currentSpeed;
+                draw(elapsed);
+                document.getElementById('stage-info').textContent = stageLabel(elapsed);
+                if (elapsed < TOTAL + 0.5) {
+                    animId = requestAnimationFrame(frame);
+                } else {
+                    draw(TOTAL);
+                    document.getElementById('stage-info').textContent = '制作完成 ✓';
+                    isPlaying = false;
+                    animId = null;
+                }
+            }
+            animId = requestAnimationFrame(frame);
+        }
+
+        // ============ 速度切换 ============
+        const speedBtns = document.querySelectorAll('.speed-group button');
+        speedBtns.forEach(btn => {
+            btn.addEventListener('click', function() {
+                speedBtns.forEach(b => b.classList.remove('active'));
+                this.classList.add('active');
+                const speedVal = parseFloat(this.dataset.speed);
+                if (!isNaN(speedVal) && speedVal > 0) {
+                    currentSpeed = speedVal;
+                }
+            });
+        });
+
+        // ============ 重新播放 ============
+        document.getElementById('btn').addEventListener('click', function() {
+            if (animId) cancelAnimationFrame(animId);
+            isPlaying = false;
+            animate();
+        });
+
+        // ============ 启动 ============
+        animate();
+
+        // ============ 暗色模式切换时重绘 ============
+        const darkMedia = window.matchMedia('(prefers-color-scheme:dark)');
+        darkMedia.addEventListener('change', () => {
+            if (elapsed > 0) draw(elapsed);
+        });
+    </script>
+</body>
+</html>
