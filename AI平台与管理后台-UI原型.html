@@ -1,0 +1,1117 @@
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,500;9..144,600&family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --bg:#17130f;
+    --bg-2:#1c1712;
+    --panel:#211b15;
+    --panel-2:#282019;
+    --border:#3a2f22;
+    --border-soft:#2c241b;
+    --text:#f1e9dc;
+    --text-dim:#b3a390;
+    --text-faint:#7d7161;
+    --accent:#c98a3d;
+    --accent-soft:#4a3a24;
+    --accent-text:#2a1c0a;
+    --sage:#7fa88a;
+    --sage-soft:#26362c;
+    --warn:#d9a441;
+    --warn-soft:#3a2f18;
+    --danger:#c1554b;
+    --danger-soft:#3a2320;
+    --info:#7ea3c4;
+    --info-soft:#22303c;
+    --archived:#5c5346;
+    --radius:10px;
+    --radius-sm:6px;
+    --mono:'JetBrains Mono', ui-monospace, monospace;
+    --display:'Fraunces', Georgia, serif;
+    --sans:'Inter', -apple-system, sans-serif;
+  }
+  *{box-sizing:border-box;}
+  html,body{margin:0;padding:0;height:100%;background:var(--bg);}
+  body{
+    font-family:var(--sans);
+    color:var(--text);
+    font-size:13.5px;
+    line-height:1.5;
+    -webkit-font-smoothing:antialiased;
+  }
+  ::selection{ background:var(--accent-soft); color:var(--text); }
+  a{color:inherit;}
+  button{font-family:inherit;}
+
+  /* ---------- layout ---------- */
+  .app{ display:flex; min-height:100vh; background:var(--bg); }
+
+  .sidebar{
+    width:248px; flex-shrink:0;
+    background:var(--bg-2);
+    border-right:1px solid var(--border-soft);
+    display:flex; flex-direction:column;
+    position:sticky; top:0; height:100vh;
+  }
+  .brand{
+    padding:22px 20px 16px;
+    border-bottom:1px solid var(--border-soft);
+  }
+  .brand-mark{ display:flex; align-items:center; gap:10px; }
+  .brand-title{ font-family:var(--display); font-size:17px; font-weight:600; letter-spacing:.2px; }
+  .brand-sub{ font-size:11px; color:var(--text-faint); margin-top:3px; letter-spacing:.3px; }
+
+  .env-switch{
+    display:flex; gap:4px; padding:14px 20px 10px;
+  }
+  .env-pill{
+    flex:1; text-align:center; padding:5px 0; border-radius:999px;
+    font-size:10.5px; font-weight:600; letter-spacing:.4px; text-transform:uppercase;
+    background:transparent; border:1px solid var(--border); color:var(--text-faint);
+    cursor:pointer; transition:all .15s ease;
+  }
+  .env-pill.is-active{ background:var(--accent-soft); border-color:var(--accent); color:#e8b877; }
+  .env-pill[data-env="prod"].is-active{ background:var(--danger-soft); border-color:var(--danger); color:#e2938b; }
+
+  nav.nav{ flex:1; overflow-y:auto; padding:6px 12px 16px; }
+  .nav-item{
+    display:flex; align-items:center; gap:10px;
+    padding:9px 10px; border-radius:var(--radius-sm);
+    color:var(--text-dim); cursor:pointer; margin-bottom:2px;
+    font-size:13px; border:1px solid transparent;
+  }
+  .nav-item:hover{ background:var(--panel); color:var(--text); }
+  .nav-item.is-active{ background:var(--panel-2); color:var(--text); border-color:var(--border); }
+  .nav-num{ font-family:var(--mono); font-size:11px; color:var(--text-faint); width:24px; flex-shrink:0; }
+  .nav-item.is-active .nav-num{ color:var(--accent); }
+  .nav-curve{ width:20px; height:12px; flex-shrink:0; opacity:.55; }
+  .nav-item.is-active .nav-curve{ opacity:1; }
+  .nav-label{ flex:1; }
+
+  .role-switch{
+    padding:14px 20px 18px; border-top:1px solid var(--border-soft);
+  }
+  .role-label{ font-size:10.5px; color:var(--text-faint); text-transform:uppercase; letter-spacing:.5px; margin-bottom:8px; }
+  .role-select{
+    width:100%; background:var(--panel); border:1px solid var(--border); color:var(--text);
+    padding:7px 10px; border-radius:var(--radius-sm); font-size:12.5px; font-family:inherit;
+  }
+  .role-hint{ font-size:11px; color:var(--text-faint); margin-top:8px; line-height:1.5; }
+
+  .main{ flex:1; min-width:0; display:flex; flex-direction:column; }
+  .topbar{
+    height:56px; flex-shrink:0; display:flex; align-items:center; justify-content:space-between;
+    padding:0 28px; border-bottom:1px solid var(--border-soft); background:var(--bg);
+    position:sticky; top:0; z-index:5;
+  }
+  .crumb{ font-size:12.5px; color:var(--text-faint); }
+  .crumb b{ color:var(--text); font-weight:600; }
+  .topbar-right{ display:flex; align-items:center; gap:10px; }
+  .search{
+    background:var(--panel); border:1px solid var(--border); border-radius:var(--radius-sm);
+    padding:6px 10px; font-size:12px; color:var(--text-faint); width:220px;
+  }
+
+  .content{ flex:1; padding:28px 32px 60px; overflow-y:auto; }
+  .module{ display:none; animation:fade .2s ease; }
+  .module.is-active{ display:block; }
+  @keyframes fade{ from{opacity:0; transform:translateY(4px);} to{opacity:1; transform:translateY(0);} }
+
+  .page-head{ display:flex; align-items:flex-end; justify-content:space-between; margin-bottom:22px; flex-wrap:wrap; gap:14px; }
+  .page-eyebrow{ font-family:var(--mono); font-size:11px; color:var(--accent); letter-spacing:.5px; margin-bottom:6px; }
+  .page-title{ font-family:var(--display); font-size:26px; font-weight:600; }
+  .page-desc{ font-size:12.5px; color:var(--text-dim); margin-top:6px; max-width:640px; }
+
+  .btn{
+    display:inline-flex; align-items:center; gap:6px;
+    padding:8px 14px; border-radius:var(--radius-sm); font-size:12.5px; font-weight:600;
+    border:1px solid var(--border); background:var(--panel); color:var(--text); cursor:pointer;
+    transition:all .12s ease;
+  }
+  .btn:hover{ border-color:var(--text-faint); }
+  .btn.primary{ background:var(--accent); border-color:var(--accent); color:var(--accent-text); }
+  .btn.primary:hover{ filter:brightness(1.08); }
+  .btn.ghost{ background:transparent; }
+  .btn.sm{ padding:5px 10px; font-size:11.5px; }
+  .btn[disabled], .btn.is-locked{ opacity:.38; cursor:not-allowed; }
+
+  .tabs{ display:flex; gap:4px; border-bottom:1px solid var(--border-soft); margin-bottom:20px; }
+  .tab{
+    padding:9px 4px; margin-right:20px; font-size:12.5px; color:var(--text-faint);
+    cursor:pointer; border-bottom:2px solid transparent; font-weight:500;
+  }
+  .tab:hover{ color:var(--text-dim); }
+  .tab.is-active{ color:var(--text); border-color:var(--accent); }
+  .tabpanel{ display:none; } .tabpanel.is-active{ display:block; }
+
+  /* cards */
+  .grid{ display:grid; grid-template-columns:repeat(auto-fill,minmax(260px,1fr)); gap:14px; }
+  .card{
+    background:var(--panel); border:1px solid var(--border-soft); border-radius:var(--radius);
+    padding:16px; cursor:pointer; transition:border-color .15s ease, transform .15s ease;
+  }
+  .card:hover{ border-color:var(--border); transform:translateY(-1px); }
+  .card-top{ display:flex; align-items:flex-start; justify-content:space-between; margin-bottom:10px; }
+  .card-title{ font-weight:600; font-size:13.5px; }
+  .card-sub{ font-size:11px; color:var(--text-faint); margin-top:3px; font-family:var(--mono); }
+  .card-row{ display:flex; justify-content:space-between; font-size:11.5px; color:var(--text-dim); margin-top:6px; }
+  .card-envs{ display:flex; gap:4px; margin-top:12px; }
+  .env-chip{ font-size:9.5px; padding:2px 6px; border-radius:4px; background:var(--panel-2); color:var(--text-faint); font-family:var(--mono); }
+
+  /* status dot + badge */
+  .dot{ width:7px; height:7px; border-radius:50%; display:inline-block; flex-shrink:0; }
+  .dot.ok{ background:var(--sage); box-shadow:0 0 0 3px var(--sage-soft); }
+  .dot.warn{ background:var(--warn); box-shadow:0 0 0 3px var(--warn-soft); }
+  .dot.bad{ background:var(--danger); box-shadow:0 0 0 3px var(--danger-soft); }
+  .dot.off{ background:var(--text-faint); box-shadow:0 0 0 3px var(--panel-2); }
+  .dot.draft{ background:var(--text-faint); }
+
+  .badge{
+    font-size:10.5px; font-weight:600; padding:3px 8px; border-radius:999px; letter-spacing:.2px;
+    display:inline-flex; align-items:center; gap:5px; white-space:nowrap;
+  }
+  .badge.b-ok{ background:var(--sage-soft); color:#a9cbb2; }
+  .badge.b-warn{ background:var(--warn-soft); color:#e8c17e; }
+  .badge.b-bad{ background:var(--danger-soft); color:#e2938b; }
+  .badge.b-info{ background:var(--info-soft); color:#a8c6e0; }
+  .badge.b-off{ background:var(--panel-2); color:var(--text-faint); }
+  .badge.b-accent{ background:var(--accent-soft); color:#e8b877; }
+
+  /* table */
+  .table-wrap{ border:1px solid var(--border-soft); border-radius:var(--radius); overflow:hidden; }
+  table{ width:100%; border-collapse:collapse; font-size:12.5px; }
+  thead th{
+    text-align:left; padding:9px 14px; background:var(--panel-2); color:var(--text-faint);
+    font-weight:600; font-size:11px; text-transform:uppercase; letter-spacing:.4px;
+    border-bottom:1px solid var(--border-soft);
+  }
+  tbody td{ padding:11px 14px; border-bottom:1px solid var(--border-soft); vertical-align:middle; }
+  tbody tr:last-child td{ border-bottom:none; }
+  tbody tr{ background:var(--panel); transition:background .1s; }
+  tbody tr:hover{ background:var(--panel-2); }
+  td.mono, .mono{ font-family:var(--mono); font-size:11.5px; color:var(--text-dim); }
+  td.num{ text-align:right; }
+
+  .panel{ background:var(--panel); border:1px solid var(--border-soft); border-radius:var(--radius); padding:18px; }
+  .panel + .panel{ margin-top:14px; }
+  .panel-title{ font-size:12px; font-weight:700; color:var(--text-dim); text-transform:uppercase; letter-spacing:.4px; margin-bottom:12px; }
+
+  .kpi-row{ display:grid; grid-template-columns:repeat(auto-fit,minmax(160px,1fr)); gap:12px; margin-bottom:20px; }
+  .kpi{ background:var(--panel); border:1px solid var(--border-soft); border-radius:var(--radius); padding:16px; }
+  .kpi.alert{ border-color:var(--danger); background:var(--danger-soft); }
+  .kpi-label{ font-size:11px; color:var(--text-faint); }
+  .kpi-value{ font-family:var(--display); font-size:26px; font-weight:600; margin-top:4px; }
+  .kpi.alert .kpi-value{ color:#e2938b; }
+  .kpi-note{ font-size:10.5px; color:var(--text-faint); margin-top:4px; }
+
+  .field-label{ font-size:11.5px; color:var(--text-dim); font-weight:600; margin-bottom:5px; display:block; }
+  .field-hint{ font-size:10.5px; color:var(--text-faint); margin-top:4px; }
+  .input, select.input, textarea.input{
+    width:100%; background:var(--bg-2); border:1px solid var(--border); color:var(--text);
+    padding:8px 10px; border-radius:var(--radius-sm); font-size:12.5px; font-family:inherit;
+  }
+  .field{ margin-bottom:14px; }
+  .field-row{ display:grid; grid-template-columns:1fr 1fr; gap:12px; }
+
+  .toggle{ width:34px; height:19px; border-radius:999px; background:var(--border); position:relative; cursor:pointer; display:inline-block; flex-shrink:0; }
+  .toggle::after{ content:''; position:absolute; width:15px; height:15px; border-radius:50%; background:var(--text-faint); top:2px; left:2px; transition:all .15s; }
+  .toggle.on{ background:var(--sage-soft); }
+  .toggle.on::after{ background:var(--sage); left:17px; }
+
+  /* drawer */
+  .drawer-backdrop{ position:fixed; inset:0; background:rgba(10,8,6,.55); backdrop-filter:blur(1px); z-index:40; display:none; }
+  .drawer-backdrop.is-open{ display:block; }
+  .drawer{
+    position:fixed; right:0; top:0; height:100vh; width:420px; background:var(--bg-2);
+    border-left:1px solid var(--border); z-index:41; transform:translateX(100%);
+    transition:transform .22s ease; display:flex; flex-direction:column;
+  }
+  .drawer.is-open{ transform:translateX(0); }
+  .drawer-head{ padding:18px 20px; border-bottom:1px solid var(--border-soft); display:flex; justify-content:space-between; align-items:center; }
+  .drawer-body{ padding:20px; overflow-y:auto; flex:1; }
+  .drawer-foot{ padding:16px 20px; border-top:1px solid var(--border-soft); display:flex; justify-content:flex-end; gap:8px; }
+  .x-close{ cursor:pointer; color:var(--text-faint); font-size:18px; line-height:1; }
+
+  .section-note{
+    display:flex; gap:8px; align-items:flex-start; background:var(--info-soft); border:1px solid #2f4356;
+    padding:10px 12px; border-radius:var(--radius-sm); font-size:11.5px; color:#b6d0e6; margin:14px 0;
+  }
+  .section-note.warn{ background:var(--warn-soft); border-color:#4a3d20; color:#e8c17e; }
+
+  hr.rule{ border:none; border-top:1px solid var(--border-soft); margin:20px 0; }
+
+  .flow{ display:flex; align-items:center; flex-wrap:wrap; gap:6px; font-size:11.5px; font-family:var(--mono); margin-bottom:18px;}
+  .flow-node{ background:var(--panel-2); border:1px solid var(--border); padding:5px 10px; border-radius:6px; color:var(--text-dim); }
+  .flow-node.on{ border-color:var(--accent); color:#e8b877; }
+  .flow-arrow{ color:var(--text-faint); }
+
+  .stack-cols{ display:grid; grid-template-columns:2fr 1fr; gap:16px; align-items:start; }
+  @media (max-width:1100px){ .stack-cols{ grid-template-columns:1fr; } }
+
+  .chart-box{ background:var(--panel); border:1px solid var(--border-soft); border-radius:var(--radius); padding:16px; }
+  .chart-legend{ display:flex; gap:14px; margin-top:10px; flex-wrap:wrap; }
+  .legend-item{ display:flex; align-items:center; gap:6px; font-size:11px; color:var(--text-dim); }
+  .legend-dot{ width:8px; height:8px; border-radius:2px; }
+
+  .req-mode .requires-admin,
+  .req-mode .requires-eng{ display:inherit; }
+  body[data-role="运营"] .requires-admin,
+  body[data-role="运营"] .requires-eng{ opacity:.35; pointer-events:none; filter:grayscale(.4); }
+  body[data-role="算法工程师"] .requires-admin{ opacity:.35; pointer-events:none; filter:grayscale(.4); }
+  .locked-tag{ font-size:9.5px; color:var(--text-faint); border:1px solid var(--border); padding:1px 6px; border-radius:4px; margin-left:6px; }
+
+  .diff-add{ background:rgba(127,168,138,.14); color:#a9cbb2; }
+  .diff-del{ background:rgba(193,85,75,.14); color:#e2938b; text-decoration:line-through; }
+
+  .progressbar{ height:6px; background:var(--panel-2); border-radius:99px; overflow:hidden; }
+  .progressbar > div{ height:100%; background:var(--accent); }
+
+  ::-webkit-scrollbar{ width:9px; height:9px; }
+  ::-webkit-scrollbar-thumb{ background:var(--border); border-radius:99px; }
+  ::-webkit-scrollbar-track{ background:transparent; }
+</style>
+
+<div class="app" id="app">
+
+  <!-- ============ SIDEBAR ============ -->
+  <aside class="sidebar">
+    <div class="brand">
+      <div class="brand-mark">
+        <svg width="22" height="22" viewBox="0 0 22 22"><path d="M2 16 C 6 16, 6 6, 10 6 S 14 16, 18 16 S 20 10, 20 10" fill="none" stroke="#c98a3d" stroke-width="1.6" stroke-linecap="round"/></svg>
+        <div>
+          <div class="brand-title">萃取 · AI 中枢</div>
+        </div>
+      </div>
+      <div class="brand-sub">AI 平台与管理后台 · 第 5 章需求原型</div>
+    </div>
+
+    <div class="env-switch" id="envSwitch">
+      <div class="env-pill is-active" data-env="dev">Dev</div>
+      <div class="env-pill" data-env="staging">Staging</div>
+      <div class="env-pill" data-env="prod">Prod</div>
+    </div>
+
+    <nav class="nav" id="navList">
+      <div class="nav-item is-active" data-target="mod-51">
+        <span class="nav-num">5.1</span>
+        <svg class="nav-curve" viewBox="0 0 20 12"><path d="M1 9 Q5 2 9 6 T19 4" fill="none" stroke="currentColor" stroke-width="1.4"/></svg>
+        <span class="nav-label">模型配置中心</span>
+      </div>
+      <div class="nav-item" data-target="mod-52">
+        <span class="nav-num">5.2</span>
+        <svg class="nav-curve" viewBox="0 0 20 12"><path d="M1 9 Q5 2 9 6 T19 4" fill="none" stroke="currentColor" stroke-width="1.4"/></svg>
+        <span class="nav-label">Prompt 管理</span>
+      </div>
+      <div class="nav-item" data-target="mod-53">
+        <span class="nav-num">5.3</span>
+        <svg class="nav-curve" viewBox="0 0 20 12"><path d="M1 9 Q5 2 9 6 T19 4" fill="none" stroke="currentColor" stroke-width="1.4"/></svg>
+        <span class="nav-label">规则引擎配置</span>
+      </div>
+      <div class="nav-item" data-target="mod-54">
+        <span class="nav-num">5.4</span>
+        <svg class="nav-curve" viewBox="0 0 20 12"><path d="M1 9 Q5 2 9 6 T19 4" fill="none" stroke="currentColor" stroke-width="1.4"/></svg>
+        <span class="nav-label">可解释性看板</span>
+      </div>
+      <div class="nav-item" data-target="mod-55">
+        <span class="nav-num">5.5</span>
+        <svg class="nav-curve" viewBox="0 0 20 12"><path d="M1 9 Q5 2 9 6 T19 4" fill="none" stroke="currentColor" stroke-width="1.4"/></svg>
+        <span class="nav-label">训练任务管理</span>
+      </div>
+      <div class="nav-item" data-target="mod-56">
+        <span class="nav-num">5.6</span>
+        <svg class="nav-curve" viewBox="0 0 20 12"><path d="M1 9 Q5 2 9 6 T19 4" fill="none" stroke="currentColor" stroke-width="1.4"/></svg>
+        <span class="nav-label">训练监控与曲线</span>
+      </div>
+      <div class="nav-item" data-target="mod-57">
+        <span class="nav-num">5.7</span>
+        <svg class="nav-curve" viewBox="0 0 20 12"><path d="M1 9 Q5 2 9 6 T19 4" fill="none" stroke="currentColor" stroke-width="1.4"/></svg>
+        <span class="nav-label">模型发布与灰度</span>
+      </div>
+      <div class="nav-item" data-target="mod-58">
+        <span class="nav-num">5.8</span>
+        <svg class="nav-curve" viewBox="0 0 20 12"><path d="M1 9 Q5 2 9 6 T19 4" fill="none" stroke="currentColor" stroke-width="1.4"/></svg>
+        <span class="nav-label">曲线分发任务</span>
+      </div>
+    </nav>
+
+    <div class="role-switch">
+      <div class="role-label">当前身份</div>
+      <select class="role-select" id="roleSelect">
+        <option value="运营">运营人员</option>
+        <option value="算法工程师" selected>算法工程师</option>
+        <option value="管理员">管理员</option>
+      </select>
+      <div class="role-hint" id="roleHint">按 5.x.3 权限边界表：置灰按钮表示该身份无权操作。</div>
+    </div>
+  </aside>
+
+  <!-- ============ MAIN ============ -->
+  <main class="main">
+    <header class="topbar">
+      <div class="crumb">AI 平台与管理后台 / <b id="crumbTitle">模型配置中心</b></div>
+      <div class="topbar-right">
+        <div class="search">🔍 搜索模块 / Prompt / 曲线ID…</div>
+        <div class="badge b-accent">v0.9 原型</div>
+      </div>
+    </header>
+
+    <div class="content">
+
+      <!-- ======================================================= -->
+      <!-- 5.1 模型配置中心 -->
+      <!-- ======================================================= -->
+      <section class="module is-active" id="mod-51">
+        <div class="page-head">
+          <div>
+            <div class="page-eyebrow">5.1 MODEL CONFIG CENTER</div>
+            <div class="page-title">模型配置中心</div>
+            <div class="page-desc">注册与管理 AI 能力模块（槽位抽取 / 曲线说明生成 / 识豆 OCR+NLU / 通用对话），按 dev / staging / prod 环境隔离配置。</div>
+          </div>
+          <button class="btn primary">+ 注册新模块</button>
+        </div>
+
+        <div class="tabs">
+          <div class="tab is-active" data-tabgroup="t51" data-tab="list">模块列表</div>
+          <div class="tab" data-tabgroup="t51" data-tab="detail">模块详情 · 槽位抽取-v2</div>
+        </div>
+
+        <div class="tabpanel is-active" data-tabgroup="t51" data-tab="list">
+          <div class="grid">
+            <div class="card" onclick="switchTab('t51','detail')">
+              <div class="card-top">
+                <div><div class="card-title">槽位抽取</div><div class="card-sub">slot-extraction</div></div>
+                <span class="badge b-ok"><span class="dot ok"></span>正常</span>
+              </div>
+              <div class="card-row"><span>激活版本</span><span class="mono">v2.3.1</span></div>
+              <div class="card-row"><span>Provider</span><span>OpenAI</span></div>
+              <div class="card-envs"><span class="env-chip">DEV</span><span class="env-chip">STAGING</span><span class="env-chip">PROD</span></div>
+            </div>
+            <div class="card">
+              <div class="card-top">
+                <div><div class="card-title">曲线说明生成</div><div class="card-sub">curve-explainer</div></div>
+                <span class="badge b-warn"><span class="dot warn"></span>降级</span>
+              </div>
+              <div class="card-row"><span>激活版本</span><span class="mono">v1.4.0</span></div>
+              <div class="card-row"><span>Provider</span><span>Azure</span></div>
+              <div class="card-envs"><span class="env-chip">DEV</span><span class="env-chip">STAGING</span></div>
+            </div>
+            <div class="card">
+              <div class="card-top">
+                <div><div class="card-title">识豆 OCR+NLU</div><div class="card-sub">bean-recognize</div></div>
+                <span class="badge b-bad"><span class="dot bad"></span>不可用</span>
+              </div>
+              <div class="card-row"><span>激活版本</span><span class="mono">v0.9.2</span></div>
+              <div class="card-row"><span>Provider</span><span>自部署</span></div>
+              <div class="card-envs"><span class="env-chip">DEV</span></div>
+            </div>
+            <div class="card">
+              <div class="card-top">
+                <div><div class="card-title">通用对话</div><div class="card-sub">general-chat</div></div>
+                <span class="badge b-off"><span class="dot draft"></span>草稿</span>
+              </div>
+              <div class="card-row"><span>激活版本</span><span class="mono">—</span></div>
+              <div class="card-row"><span>Provider</span><span>未配置</span></div>
+              <div class="card-envs"><span class="env-chip">DEV</span></div>
+            </div>
+          </div>
+        </div>
+
+        <div class="tabpanel" data-tabgroup="t51" data-tab="detail">
+          <div class="stack-cols">
+            <div>
+              <div class="panel">
+                <div class="panel-title">基本信息</div>
+                <div class="field-row">
+                  <div><div class="field-label">模块名称</div><div class="mono">slot-extraction</div></div>
+                  <div><div class="field-label">模块类型</div><div>槽位抽取</div></div>
+                </div>
+                <hr class="rule">
+                <div class="field-row">
+                  <div><div class="field-label">Provider / Endpoint</div><div>OpenAI · api.openai.com/v1</div></div>
+                  <div><div class="field-label">API Key</div><div class="mono">sk-••••••••3f2a <span class="locked-tag requires-admin">仅管理员可查看明文</span></div></div>
+                </div>
+                <div class="field-row" style="margin-top:12px;">
+                  <div><div class="field-label">temperature / top_p</div><div class="mono">0.20 / 0.90</div></div>
+                  <div><div class="field-label">max_tokens / timeout / retry</div><div class="mono">2048 / 8s / 2</div></div>
+                </div>
+              </div>
+
+              <div class="panel">
+                <div class="tabs" style="margin-bottom:14px;">
+                  <div class="tab is-active" data-tabgroup="t51d" data-tab="versions">版本列表</div>
+                  <div class="tab" data-tabgroup="t51d" data-tab="logs">运行日志</div>
+                </div>
+                <div class="tabpanel is-active" data-tabgroup="t51d" data-tab="versions">
+                  <div class="table-wrap">
+                    <table>
+                      <thead><tr><th>版本</th><th>环境</th><th>状态</th><th>更新时间</th><th>操作</th></tr></thead>
+                      <tbody>
+                        <tr><td class="mono">v2.3.1</td><td><span class="env-chip">PROD</span></td><td><span class="badge b-ok">生效中</span></td><td class="mono">2026-07-02</td><td><button class="btn sm ghost">查看</button></td></tr>
+                        <tr><td class="mono">v2.3.0</td><td><span class="env-chip">STAGING</span></td><td><span class="badge b-info">验证中</span></td><td class="mono">2026-06-29</td><td><button class="btn sm ghost requires-eng">回滚</button></td></tr>
+                        <tr><td class="mono">v2.2.4</td><td>—</td><td><span class="badge b-off">已归档</span></td><td class="mono">2026-06-10</td><td><button class="btn sm ghost requires-eng">回滚</button></td></tr>
+                      </tbody>
+                    </table>
+                  </div>
+                </div>
+                <div class="tabpanel" data-tabgroup="t51d" data-tab="logs">
+                  <div class="panel" style="background:var(--bg-2); font-family:var(--mono); font-size:11.5px; color:var(--text-dim); max-height:220px; overflow-y:auto;">
+                    <div>[07:12:03] INFO  request_id=8f21 latency=612ms status=200</div>
+                    <div>[07:12:05] WARN  request_id=8f22 latency=4102ms status=200 (slow)</div>
+                    <div>[07:12:08] INFO  request_id=8f23 latency=580ms status=200</div>
+                    <div>[07:12:11] ERROR request_id=8f24 timeout after 8000ms</div>
+                    <div>[07:12:14] INFO  request_id=8f25 latency=601ms status=200</div>
+                  </div>
+                  <div class="field-hint" style="margin-top:8px;">默认展示最近 1h，最多返回 500 条；超出提示导出。</div>
+                </div>
+              </div>
+            </div>
+
+            <div>
+              <div class="panel">
+                <div class="panel-title">状态流转</div>
+                <div class="flow" style="flex-direction:column; align-items:flex-start; gap:8px;">
+                  <div class="flow-node">草稿</div>
+                  <div class="flow-arrow">↓ 首个版本激活且心跳通过</div>
+                  <div class="flow-node on">正常</div>
+                  <div class="flow-arrow">↓ 5min 内超时率 &gt; 20%</div>
+                  <div class="flow-node">降级</div>
+                  <div class="flow-arrow">↓ 超时率 &gt; 80% 或连续失败 3 次</div>
+                  <div class="flow-node">不可用</div>
+                </div>
+              </div>
+              <div class="panel">
+                <div class="panel-title">变更审批</div>
+                <div class="section-note warn">修改 PROD 模型参数 / Endpoint 需算法工程师 + 产品负责人审批，超时 48h 自动提醒（不自动通过）。</div>
+                <button class="btn sm requires-admin" style="width:100%; margin-top:4px;">停用该模块</button>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- ======================================================= -->
+      <!-- 5.2 Prompt 管理 -->
+      <!-- ======================================================= -->
+      <section class="module" id="mod-52">
+        <div class="page-head">
+          <div>
+            <div class="page-eyebrow">5.2 PROMPT MANAGEMENT</div>
+            <div class="page-title">Prompt 管理</div>
+            <div class="page-desc">按能力模块分类管理 Prompt 模板，支持变量占位符、版本历史、staging 验证与回滚，以及感知层文案配置。</div>
+          </div>
+          <button class="btn primary">+ 新建 Prompt</button>
+        </div>
+
+        <div class="tabs">
+          <div class="tab is-active" data-tabgroup="t52" data-tab="list">Prompt 列表</div>
+          <div class="tab" data-tabgroup="t52" data-tab="detail">曲线说明生成 · 详情</div>
+          <div class="tab" data-tabgroup="t52" data-tab="diff">版本对比</div>
+        </div>
+
+        <div class="tabpanel is-active" data-tabgroup="t52" data-tab="list">
+          <div class="panel-title">槽位抽取</div>
+          <div class="grid" style="margin-bottom:18px;">
+            <div class="card">
+              <div class="card-top"><div class="card-title">自然语言槽位解析</div><span class="badge b-ok">已激活 v1.6</span></div>
+              <div class="card-row"><span>一次保存率</span><span>41.2%</span></div>
+            </div>
+            <div class="card" onclick="switchTab('t52','detail')">
+              <div class="card-top"><div class="card-title">拍照识豆字段抽取</div><span class="badge b-info">staging 中 v0.8</span></div>
+              <div class="card-row"><span>平均轮次</span><span>1.3</span></div>
+            </div>
+          </div>
+          <div class="panel-title">曲线说明生成</div>
+          <div class="grid">
+            <div class="card">
+              <div class="card-top"><div class="card-title">恒压曲线说明文案</div><span class="badge b-ok">已激活 v3.1</span></div>
+              <div class="card-row"><span>满意度</span><span>76%</span></div>
+            </div>
+            <div class="card">
+              <div class="card-top"><div class="card-title">感知层步骤文案</div><span class="badge b-accent">A/B 实验中</span></div>
+              <div class="card-row"><span>参与实验</span><span>2 个</span></div>
+            </div>
+          </div>
+        </div>
+
+        <div class="tabpanel" data-tabgroup="t52" data-tab="detail">
+          <div class="stack-cols">
+            <div>
+              <div class="panel">
+                <div class="panel-title">基本信息</div>
+                <div class="field-row">
+                  <div><div class="field-label">名称</div><div>拍照识豆字段抽取</div></div>
+                  <div><div class="field-label">关联模块</div><div>识豆 OCR+NLU</div></div>
+                </div>
+              </div>
+              <div class="panel">
+                <div class="panel-title">激活版本内容 · v0.8（staging）</div>
+                <div class="mono" style="background:var(--bg-2); padding:12px; border-radius:8px; font-size:11.5px; line-height:1.7; color:var(--text-dim);">
+                  请从图片中识别咖啡豆包装袋信息，输出 JSON：{ "origin": "{'{'}origin{'}'}", "roast_level": "{'{'}roast_level{'}'}", "process": "…", "confidence": 0-1 }。若字段无法识别，置为 null 并给出原因。
+                </div>
+                <div class="field-hint">已声明变量：origin（字符串，必填）、roast_level（字符串，必填）</div>
+              </div>
+              <div class="panel">
+                <div class="panel-title">版本历史</div>
+                <div class="table-wrap">
+                  <table>
+                    <thead><tr><th>版本</th><th>状态</th><th>验证人</th><th>发布时间</th><th>操作</th></tr></thead>
+                    <tbody>
+                      <tr><td class="mono">v0.8</td><td><span class="badge b-info">staging 中</span></td><td>@zhang.wei</td><td class="mono">2026-07-05</td><td><button class="btn sm ghost requires-admin">发布到 prod</button></td></tr>
+                      <tr><td class="mono">v0.7</td><td><span class="badge b-off">已归档</span></td><td>@zhang.wei</td><td class="mono">2026-06-20</td><td><button class="btn sm ghost">回滚</button></td></tr>
+                    </tbody>
+                  </table>
+                </div>
+              </div>
+            </div>
+            <div>
+              <div class="panel">
+                <div class="panel-title">状态流转</div>
+                <div class="flow" style="flex-direction:column; align-items:flex-start; gap:8px;">
+                  <div class="flow-node">草稿</div><div class="flow-arrow">↓</div>
+                  <div class="flow-node">待发布</div><div class="flow-arrow">↓</div>
+                  <div class="flow-node on">staging 中</div><div class="flow-arrow">↓ 审批通过</div>
+                  <div class="flow-node">已激活</div>
+                </div>
+              </div>
+              <div class="section-note">运营的感知层文案编辑权限默认关闭，需管理员单独开启；不含 Prompt 主体编辑权。</div>
+            </div>
+          </div>
+        </div>
+
+        <div class="tabpanel" data-tabgroup="t52" data-tab="diff">
+          <div class="panel">
+            <div class="panel-title">版本对比 · v0.7 → v0.8</div>
+            <div class="mono" style="font-size:11.5px; line-height:1.9;">
+              <div>请从图片中识别咖啡豆包装袋信息，输出 JSON：</div>
+              <div class="diff-del">{ "origin": "{'{'}origin{'}'}", "roast_level": "{'{'}roast_level{'}'}" }</div>
+              <div class="diff-add">{ "origin": "{'{'}origin{'}'}", "roast_level": "{'{'}roast_level{'}'}", "process": "…", "confidence": 0-1 }</div>
+              <div class="diff-add">若字段无法识别，置为 null 并给出原因。</div>
+            </div>
+            <div style="margin-top:16px; display:flex; gap:8px;">
+              <button class="btn sm ghost">选择 v0.7 发布</button>
+              <button class="btn sm primary">选择 v0.8 发布</button>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- ======================================================= -->
+      <!-- 5.3 规则引擎配置 -->
+      <!-- ======================================================= -->
+      <section class="module" id="mod-53">
+        <div class="page-head">
+          <div>
+            <div class="page-eyebrow">5.3 RULE ENGINE CONFIG</div>
+            <div class="page-title">规则引擎配置</div>
+            <div class="page-desc">配置「问题标签 → 调整动作」映射，规则集版本与曲线 metadata 关联，当前激活 <span class="mono">rule_v14</span>。</div>
+          </div>
+          <button class="btn primary" onclick="openDrawer()">+ 新建规则</button>
+        </div>
+
+        <div class="panel-title">口感（6）</div>
+        <div class="table-wrap" style="margin-bottom:18px;">
+          <table>
+            <thead><tr><th>问题标签</th><th>调整参数</th><th>方向</th><th>范围</th><th>优先级</th><th>状态</th><th></th></tr></thead>
+            <tbody>
+              <tr><td>偏苦</td><td>水温</td><td>减少</td><td class="mono">1–2°C</td><td class="mono">50</td><td><div class="toggle on"></div></td><td><button class="btn sm ghost" onclick="openDrawer()">编辑</button></td></tr>
+              <tr><td>偏酸</td><td>水温</td><td>增加</td><td class="mono">1–2°C</td><td class="mono">50</td><td><div class="toggle on"></div></td><td><button class="btn sm ghost" onclick="openDrawer()">编辑</button></td></tr>
+              <tr><td>偏涩</td><td>研磨度</td><td>调粗</td><td class="mono">30–60μm</td><td class="mono">40</td><td><div class="toggle on"></div></td><td><button class="btn sm ghost" onclick="openDrawer()">编辑</button></td></tr>
+              <tr><td>太清淡</td><td>粉量</td><td>增加</td><td class="mono">0.5–1g</td><td class="mono">55</td><td><div class="toggle on"></div></td><td><button class="btn sm ghost" onclick="openDrawer()">编辑</button></td></tr>
+              <tr><td>太厚重</td><td>粉量</td><td>减少</td><td class="mono">0.5–1g</td><td class="mono">55</td><td><div class="toggle"></div></td><td><button class="btn sm ghost" onclick="openDrawer()">编辑</button></td></tr>
+              <tr><td>缺乏层次</td><td>研磨度</td><td>调粗</td><td class="mono">20–40μm</td><td class="mono">60</td><td><div class="toggle on"></div></td><td><button class="btn sm ghost" onclick="openDrawer()">编辑</button></td></tr>
+            </tbody>
+          </table>
+        </div>
+
+        <div class="panel-title">风味（6）</div>
+        <div class="table-wrap" style="margin-bottom:18px;">
+          <table>
+            <thead><tr><th>问题标签</th><th>调整参数</th><th>方向</th><th>范围</th><th>优先级</th><th>状态</th><th></th></tr></thead>
+            <tbody>
+              <tr><td>更多花香</td><td>水温</td><td>增加</td><td class="mono">1–2°C</td><td class="mono">45</td><td><div class="toggle on"></div></td><td><button class="btn sm ghost" onclick="openDrawer()">编辑</button></td></tr>
+              <tr><td>更多果味</td><td>水温</td><td>增加</td><td class="mono">1°C</td><td class="mono">50</td><td><div class="toggle on"></div></td><td><button class="btn sm ghost" onclick="openDrawer()">编辑</button></td></tr>
+              <tr><td>更多甜感</td><td>萃取时间</td><td>延长</td><td class="mono">5–8s</td><td class="mono">50</td><td><div class="toggle on"></div></td><td><button class="btn sm ghost" onclick="openDrawer()">编辑</button></td></tr>
+              <tr><td>更少焦糊味</td><td>水温</td><td>减少</td><td class="mono">2–3°C</td><td class="mono">45</td><td><div class="toggle on"></div></td><td><button class="btn sm ghost" onclick="openDrawer()">编辑</button></td></tr>
+              <tr><td>更多巧克力感</td><td>研磨度</td><td>调细</td><td class="mono">20–30μm</td><td class="mono">50</td><td><div class="toggle on"></div></td><td><button class="btn sm ghost" onclick="openDrawer()">编辑</button></td></tr>
+              <tr><td>更多坚果感</td><td>注水方式</td><td>调整</td><td class="mono">中段加强</td><td class="mono">55</td><td><div class="toggle on"></div></td><td><button class="btn sm ghost" onclick="openDrawer()">编辑</button></td></tr>
+            </tbody>
+          </table>
+        </div>
+
+        <div class="panel-title">萃取问题（3）</div>
+        <div class="table-wrap">
+          <table>
+            <thead><tr><th>问题标签</th><th>调整参数</th><th>方向</th><th>范围</th><th>优先级</th><th>状态</th><th></th></tr></thead>
+            <tbody>
+              <tr><td>萃取过度</td><td>研磨度</td><td>调粗</td><td class="mono">40–60μm</td><td class="mono">50</td><td><div class="toggle on"></div></td><td><button class="btn sm ghost" onclick="openDrawer()">编辑</button></td></tr>
+              <tr><td>萃取不足</td><td>研磨度</td><td>调细</td><td class="mono">40–60μm</td><td class="mono">50</td><td><div class="toggle on"></div></td><td><button class="btn sm ghost" onclick="openDrawer()">编辑</button></td></tr>
+              <tr><td>通道效应</td><td>研磨度</td><td>调粗</td><td class="mono">20–30μm</td><td class="mono">35</td><td><div class="toggle on"></div></td><td><button class="btn sm ghost" onclick="openDrawer()">编辑</button></td></tr>
+            </tbody>
+          </table>
+        </div>
+      </section>
+
+      <!-- ======================================================= -->
+      <!-- 5.4 可解释性看板 -->
+      <!-- ======================================================= -->
+      <section class="module" id="mod-54">
+        <div class="page-head">
+          <div>
+            <div class="page-eyebrow">5.4 EXPLAINABILITY</div>
+            <div class="page-title">可解释性看板</div>
+            <div class="page-desc">查询单次生成 / 优化的完整链路：输入 → 意图识别 → 槽位解析 → 规则命中 → 输出参数。</div>
+          </div>
+        </div>
+
+        <div class="panel" style="margin-bottom:16px;">
+          <div class="field-row">
+            <div class="field"><label class="field-label">曲线 ID / 用户 ID</label><input class="input" placeholder="curve_8f21a3 或 u_10293"></div>
+            <div class="field"><label class="field-label">时间范围</label><select class="input"><option>最近 24h</option><option>最近 7 天</option></select></div>
+          </div>
+          <button class="btn primary sm">查询</button>
+        </div>
+
+        <div class="table-wrap" style="margin-bottom:16px;">
+          <table>
+            <thead><tr><th>时间</th><th>用户</th><th>类型</th><th>使用版本</th><th>耗时</th><th>结果</th><th></th></tr></thead>
+            <tbody>
+              <tr onclick="toggleTrace(this)" style="cursor:pointer;">
+                <td class="mono">14:02:11</td><td class="mono">u10*****293</td><td>新建</td><td class="mono">m2.3.1/p1.6/r14</td><td class="mono">1240ms</td><td><span class="badge b-ok">成功</span></td><td>▾</td>
+              </tr>
+              <tr class="trace-row" style="display:none;"><td colspan="7">
+                <div class="flow">
+                  <div class="flow-node">① 输入：埃塞俄比亚浅烘、偏花香变压曲线</div><span class="flow-arrow">→</span>
+                  <div class="flow-node">② 意图：新建曲线 (0.94)</div><span class="flow-arrow">→</span>
+                  <div class="flow-node">③ 槽位：产地=埃塞俄比亚, 烘焙度=浅烘</div><span class="flow-arrow">→</span>
+                  <div class="flow-node on">④ 命中规则：更多花香 → 水温+1.5°C</div><span class="flow-arrow">→</span>
+                  <div class="flow-node">⑤ 输出：4 阶段变压曲线</div>
+                </div>
+              </td></tr>
+              <tr onclick="toggleTrace(this)" style="cursor:pointer;">
+                <td class="mono">14:01:55</td><td class="mono">u55*****810</td><td>优化</td><td class="mono">m2.3.1/p3.1/r14</td><td class="mono">980ms</td><td><span class="badge b-bad">失败</span></td><td>▾</td>
+              </tr>
+              <tr class="trace-row" style="display:none;"><td colspan="7">
+                <div class="flow"><div class="flow-node">数据缺失 · 该请求发生在 rule_v14 上线前，链路详情不完整</div></div>
+              </td></tr>
+            </tbody>
+          </table>
+        </div>
+
+        <div class="panel">
+          <div class="panel-title" style="cursor:pointer;" onclick="this.nextElementSibling.classList.toggle('is-open')">统计看板（点击展开 / 收起）▾</div>
+          <div class="grid" style="display:none;" id="statsPanel">
+            <div class="chart-box">
+              <div class="field-label">意图识别分布</div>
+              <svg viewBox="0 0 200 100" width="100%" height="100">
+                <rect x="10" y="30" width="24" height="60" fill="#c98a3d"/>
+                <rect x="46" y="55" width="24" height="35" fill="#7fa88a"/>
+                <rect x="82" y="70" width="24" height="20" fill="#7ea3c4"/>
+                <rect x="118" y="80" width="24" height="10" fill="#5c5346"/>
+              </svg>
+              <div class="chart-legend"><span class="legend-item"><span class="legend-dot" style="background:#c98a3d"></span>新建 0.91</span><span class="legend-item"><span class="legend-dot" style="background:#7fa88a"></span>优化 0.87</span></div>
+            </div>
+            <div class="chart-box">
+              <div class="field-label">规则命中率 → 保存率</div>
+              <svg viewBox="0 0 200 100" width="100%" height="100">
+                <polyline points="10,80 50,60 90,45 130,50 170,30" fill="none" stroke="#c98a3d" stroke-width="2"/>
+              </svg>
+            </div>
+            <div class="chart-box">
+              <div class="field-label">Prompt 版本效果对比</div>
+              <div style="font-size:11.5px; color:var(--text-dim); line-height:1.8;">
+                v3.0 满意度 68% ・ 平均轮次 1.6<br>
+                v3.1 满意度 76% ・ 平均轮次 1.3
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- ======================================================= -->
+      <!-- 5.5 训练任务管理 -->
+      <!-- ======================================================= -->
+      <section class="module" id="mod-55">
+        <div class="page-head">
+          <div>
+            <div class="page-eyebrow">5.5 TRAINING JOBS</div>
+            <div class="page-title">训练任务管理</div>
+            <div class="page-desc">创建与追踪 Prompt 优化 / 模型微调 / 曲线参数预测任务，含超参配置与实时日志。</div>
+          </div>
+          <button class="btn primary requires-eng">+ 创建训练任务</button>
+        </div>
+
+        <div class="tabs">
+          <div class="tab is-active" data-tabgroup="t55" data-tab="list">任务列表</div>
+          <div class="tab" data-tabgroup="t55" data-tab="detail">任务详情 · slot-ft-0704</div>
+        </div>
+
+        <div class="tabpanel is-active" data-tabgroup="t55" data-tab="list">
+          <div class="table-wrap">
+            <table>
+              <thead><tr><th>任务名称</th><th>类型</th><th>状态</th><th>创建人</th><th>创建时间</th><th></th></tr></thead>
+              <tbody>
+                <tr onclick="switchTab('t55','detail')" style="cursor:pointer;">
+                  <td class="mono">slot-ft-0704</td><td>模型微调</td><td><span class="badge b-info">运行中</span></td><td>@zhang.wei</td><td class="mono">2026-07-04 09:12</td><td><button class="btn sm ghost">查看</button></td>
+                </tr>
+                <tr>
+                  <td class="mono">prompt-opt-0629</td><td>Prompt优化</td><td><span class="badge b-ok">成功</span></td><td>@li.na</td><td class="mono">2026-06-29 21:40</td><td><button class="btn sm ghost">查看</button></td>
+                </tr>
+                <tr>
+                  <td class="mono">curve-pred-0615</td><td>曲线参数预测</td><td><span class="badge b-bad">失败</span></td><td>@zhang.wei</td><td class="mono">2026-06-15 03:02</td><td><button class="btn sm ghost">重试</button></td>
+                </tr>
+                <tr>
+                  <td class="mono">bean-ocr-ft-0601</td><td>模型微调</td><td><span class="badge b-off">已取消</span></td><td>@li.na</td><td class="mono">2026-06-01 11:00</td><td><button class="btn sm ghost">克隆</button></td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+
+        <div class="tabpanel" data-tabgroup="t55" data-tab="detail">
+          <div class="stack-cols">
+            <div>
+              <div class="panel">
+                <div class="panel-title">基本配置</div>
+                <div class="field-row">
+                  <div><div class="field-label">基座模型</div><div class="mono">slot-extraction v2.2.4</div></div>
+                  <div><div class="field-label">数据集</div><div class="mono">feedback_0701.jsonl (86MB)</div></div>
+                </div>
+                <div class="field-row" style="margin-top:12px;">
+                  <div><div class="field-label">learning_rate / epochs</div><div class="mono">1e-4 / 12</div></div>
+                  <div><div class="field-label">batch_size / LoRA rank</div><div class="mono">32 / 8</div></div>
+                </div>
+              </div>
+              <div class="panel">
+                <div class="tabs" style="margin-bottom:14px;">
+                  <div class="tab is-active" data-tabgroup="t55d" data-tab="log">实时日志</div>
+                  <div class="tab" data-tabgroup="t55d" data-tab="metrics">指标</div>
+                  <div class="tab" data-tabgroup="t55d" data-tab="artifact">产出物</div>
+                </div>
+                <div class="tabpanel is-active" data-tabgroup="t55d" data-tab="log">
+                  <div style="background:var(--bg-2); padding:12px; border-radius:8px; font-family:var(--mono); font-size:11.5px; color:var(--text-dim); max-height:200px; overflow-y:auto;">
+                    <div>[epoch 7] loss=0.312 val_loss=0.298</div>
+                    <div>[epoch 8] loss=0.301 val_loss=0.293</div>
+                    <div>[epoch 9] loss=0.289 val_loss=0.290</div>
+                    <div style="color:#e8c17e;">[WARN] val_loss 连续 2 个 epoch 未显著下降</div>
+                  </div>
+                </div>
+                <div class="tabpanel" data-tabgroup="t55d" data-tab="metrics">
+                  <svg viewBox="0 0 300 100" width="100%" height="110">
+                    <polyline points="0,80 40,60 80,50 120,42 160,38 200,34 240,31 280,29" fill="none" stroke="#c98a3d" stroke-width="2"/>
+                    <polyline points="0,85 40,66 80,55 120,50 160,47 200,46 240,46 280,47" fill="none" stroke="#7ea3c4" stroke-width="2"/>
+                  </svg>
+                  <div class="chart-legend"><span class="legend-item"><span class="legend-dot" style="background:#c98a3d"></span>loss</span><span class="legend-item"><span class="legend-dot" style="background:#7ea3c4"></span>val_loss</span></div>
+                </div>
+                <div class="tabpanel" data-tabgroup="t55d" data-tab="artifact">
+                  <div class="field-row"><div class="field-label">Checkpoint</div><div class="mono">ckpt-slot-ft-0704-e9.tar (2.1GB)</div></div>
+                  <button class="btn sm" style="margin-top:10px;">下载评估报告</button>
+                </div>
+              </div>
+            </div>
+            <div>
+              <div class="panel">
+                <div class="panel-title">状态流转</div>
+                <div class="flow" style="flex-direction:column; align-items:flex-start; gap:8px;">
+                  <div class="flow-node">草稿</div><div class="flow-arrow">↓</div>
+                  <div class="flow-node">排队中</div><div class="flow-arrow">↓</div>
+                  <div class="flow-node on">运行中</div><div class="flow-arrow">↓</div>
+                  <div class="flow-node">成功 / 失败</div>
+                </div>
+              </div>
+              <button class="btn sm requires-eng" style="width:100%;">取消任务</button>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- ======================================================= -->
+      <!-- 5.6 训练监控与训练曲线 -->
+      <!-- ======================================================= -->
+      <section class="module" id="mod-56">
+        <div class="page-head">
+          <div>
+            <div class="page-eyebrow">5.6 TRAINING MONITORING</div>
+            <div class="page-title">训练监控与训练曲线</div>
+            <div class="page-desc">四个区域：运行状态与告警、训练曲线、业务指标、多 Run 实验对比。数据延迟 T+1h。</div>
+          </div>
+        </div>
+
+        <div class="kpi-row">
+          <div class="kpi"><div class="kpi-label">运行中任务</div><div class="kpi-value">2</div></div>
+          <div class="kpi alert"><div class="kpi-label">待处理告警</div><div class="kpi-value">1</div><div class="kpi-note">val_loss 连续 5 个 epoch 未下降</div></div>
+          <div class="kpi"><div class="kpi-label">一次保存率（本周）</div><div class="kpi-value">42.7%</div></div>
+          <div class="kpi"><div class="kpi-label">满意度正反馈率</div><div class="kpi-value">73%</div></div>
+        </div>
+
+        <div class="chart-box" style="margin-bottom:14px;">
+          <div class="panel-title">训练曲线 · 多 Run 对比</div>
+          <svg viewBox="0 0 640 140" width="100%" height="140">
+            <polyline points="0,120 80,90 160,70 240,58 320,50 400,45 480,42 560,40 640,39" fill="none" stroke="#c98a3d" stroke-width="2"/>
+            <polyline points="0,124 80,100 160,84 240,72 320,64 400,58 480,55 560,53 640,52" fill="none" stroke="#7fa88a" stroke-width="2"/>
+            <polyline points="0,128 80,116 160,108 240,102 320,99 400,97 480,96 560,96 640,96" fill="none" stroke="#7ea3c4" stroke-width="2"/>
+          </svg>
+          <div class="chart-legend">
+            <span class="legend-item"><span class="legend-dot" style="background:#c98a3d"></span>slot-ft-0704 (loss)</span>
+            <span class="legend-item"><span class="legend-dot" style="background:#7fa88a"></span>prompt-opt-0629 (loss)</span>
+            <span class="legend-item"><span class="legend-dot" style="background:#7ea3c4"></span>curve-pred-0615 (loss)</span>
+          </div>
+        </div>
+
+        <div class="stack-cols">
+          <div class="chart-box">
+            <div class="panel-title">业务指标 · 按模型版本</div>
+            <svg viewBox="0 0 400 120" width="100%" height="120">
+              <polyline points="0,90 60,80 120,70 180,55 240,45 300,38 360,34" fill="none" stroke="#c98a3d" stroke-width="2"/>
+              <polyline points="0,100 60,95 120,90 180,80 240,70 300,62 360,58" fill="none" stroke="#d9a441" stroke-width="2"/>
+            </svg>
+            <div class="chart-legend"><span class="legend-item"><span class="legend-dot" style="background:#c98a3d"></span>一次保存率</span><span class="legend-item"><span class="legend-dot" style="background:#d9a441"></span>优化应用率</span></div>
+          </div>
+          <div class="panel">
+            <div class="panel-title">告警配置</div>
+            <div class="table-wrap">
+              <table>
+                <thead><tr><th>类型</th><th>阈值</th><th>接收人</th></tr></thead>
+                <tbody>
+                  <tr><td>val_loss 未下降</td><td class="mono">N=5</td><td>创建人+管理员</td></tr>
+                  <tr><td>一次保存率跌破</td><td class="mono">&lt;30%</td><td>工程师+产品</td></tr>
+                  <tr><td>GPU 利用率低</td><td class="mono">&lt;20%/30min</td><td>算法工程师</td></tr>
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- ======================================================= -->
+      <!-- 5.7 模型发布与灰度 -->
+      <!-- ======================================================= -->
+      <section class="module" id="mod-57">
+        <div class="page-head">
+          <div>
+            <div class="page-eyebrow">5.7 MODEL RELEASE & CANARY</div>
+            <div class="page-title">模型发布与灰度</div>
+            <div class="page-desc">从训练产出发布模型版本，staging 验收后审批发布 prod；支持 A/B 灰度与一键回滚。</div>
+          </div>
+          <button class="btn primary requires-eng">发布为新版本</button>
+        </div>
+
+        <div class="tabs">
+          <div class="tab is-active" data-tabgroup="t57" data-tab="list">版本列表</div>
+          <div class="tab" data-tabgroup="t57" data-tab="canary">灰度配置</div>
+        </div>
+
+        <div class="tabpanel is-active" data-tabgroup="t57" data-tab="list">
+          <div class="table-wrap">
+            <table>
+              <thead><tr><th>版本</th><th>来源 Run</th><th>状态</th><th>激活时间</th><th></th></tr></thead>
+              <tbody>
+                <tr><td class="mono">slot-extraction v2.3.1</td><td class="mono">slot-ft-0704</td><td><span class="badge b-ok">已激活</span></td><td class="mono">2026-07-02</td><td><button class="btn sm ghost requires-admin">回滚</button></td></tr>
+                <tr><td class="mono">slot-extraction v2.3.0</td><td class="mono">slot-ft-0620</td><td><span class="badge b-off">已归档</span></td><td class="mono">2026-06-20</td><td><button class="btn sm ghost requires-eng">回滚</button></td></tr>
+                <tr><td class="mono">curve-explainer v1.4.0</td><td class="mono">prompt-opt-0629</td><td><span class="badge b-info">staging 中</span></td><td class="mono">—</td><td><button class="btn sm ghost requires-admin">审批发布</button></td></tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+
+        <div class="tabpanel" data-tabgroup="t57" data-tab="canary">
+          <div class="panel">
+            <div class="panel-title">灰度实验配置</div>
+            <div class="field"><label class="field-label">实验名称</label><input class="input" value="slot-v2.3.1-canary"></div>
+            <div class="field-row">
+              <div class="field"><label class="field-label">版本 A</label><select class="input"><option>v2.3.0（对照）</option></select></div>
+              <div class="field"><label class="field-label">版本 B</label><select class="input"><option>v2.3.1（实验）</option></select></div>
+            </div>
+            <div class="field-row">
+              <div class="field"><label class="field-label">流量分配</label><input class="input" value="A 50% / B 50%"></div>
+              <div class="field"><label class="field-label">实验周期</label><input class="input" value="7 天"></div>
+            </div>
+            <div class="field"><label class="field-label">目标指标</label><select class="input"><option>一次保存率</option><option>满意度</option></select></div>
+            <div class="section-note warn">提前终止条件：满意度 &lt; 20% 时自动终止实验。</div>
+            <button class="btn primary requires-eng">启动实验</button>
+          </div>
+        </div>
+      </section>
+
+      <!-- ======================================================= -->
+      <!-- 5.8 曲线分发任务 -->
+      <!-- ======================================================= -->
+      <section class="module" id="mod-58">
+        <div class="page-head">
+          <div>
+            <div class="page-eyebrow">5.8 CURVE DISTRIBUTION</div>
+            <div class="page-title">训练 / 发布后的曲线分发</div>
+            <div class="page-desc">将官方 / 训练产出曲线批量写入指定曲线库并分发到目标账号，运营人员为主要操作角色。</div>
+          </div>
+          <button class="btn primary">+ 创建分发任务</button>
+        </div>
+
+        <div class="tabs">
+          <div class="tab is-active" data-tabgroup="t58" data-tab="list">任务列表</div>
+          <div class="tab" data-tabgroup="t58" data-tab="detail">任务详情 · 埃塞浅烘花香系列</div>
+        </div>
+
+        <div class="tabpanel is-active" data-tabgroup="t58" data-tab="list">
+          <div class="table-wrap">
+            <table>
+              <thead><tr><th>任务名称</th><th>状态</th><th>目标库</th><th>目标账号数</th><th>创建时间</th><th></th></tr></thead>
+              <tbody>
+                <tr onclick="switchTab('t58','detail')" style="cursor:pointer;">
+                  <td>埃塞浅烘花香系列</td><td><span class="badge b-info">执行中</span></td><td>官方精选库</td><td class="mono">3,200</td><td class="mono">2026-07-06 10:00</td><td><button class="btn sm ghost">查看</button></td>
+                </tr>
+                <tr>
+                  <td>KOL 内测批次 07</td><td><span class="badge b-ok">已完成</span></td><td>KOL 曲线库</td><td class="mono">86</td><td class="mono">2026-07-01 09:30</td><td><button class="btn sm ghost">查看</button></td>
+                </tr>
+                <tr>
+                  <td>活动库-夏日冷萃</td><td><span class="badge b-off">已暂停</span></td><td>活动库</td><td class="mono">1,500</td><td class="mono">2026-06-25 14:00</td><td><button class="btn sm ghost">恢复</button></td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+
+        <div class="tabpanel" data-tabgroup="t58" data-tab="detail">
+          <div class="stack-cols">
+            <div>
+              <div class="panel">
+                <div class="panel-title">配置信息</div>
+                <div class="field-row">
+                  <div><div class="field-label">曲线来源</div><div class="mono">curve-explainer v1.4.0</div></div>
+                  <div><div class="field-label">分发模式</div><div>仅入库 + 复制到我的曲线</div></div>
+                </div>
+                <div class="field-row" style="margin-top:12px;">
+                  <div><div class="field-label">命名规则</div><div class="mono">AI_{'{'}origin{'}'}_{'{'}roast{'}'}_{'{'}version{'}'}_{'{'}index{'}'}</div></div>
+                  <div><div class="field-label">权限设置</div><div>可下载 / 可编辑</div></div>
+                </div>
+              </div>
+              <div class="panel">
+                <div class="panel-title">分发进度</div>
+                <div class="progressbar"><div style="width:64%"></div></div>
+                <div class="field-row" style="margin-top:10px;">
+                  <div class="kpi" style="padding:10px;"><div class="kpi-label">已完成 / 总数</div><div class="kpi-value" style="font-size:18px;">2,048 / 3,200</div></div>
+                  <div class="kpi" style="padding:10px;"><div class="kpi-label">失败</div><div class="kpi-value" style="font-size:18px; color:#e2938b;">12</div></div>
+                </div>
+                <button class="btn sm" style="margin-top:10px;">暂停</button>
+                <button class="btn sm ghost">重试失败账号</button>
+              </div>
+            </div>
+            <div>
+              <div class="panel">
+                <div class="panel-title">分发前预览（前 3 条）</div>
+                <div style="font-family:var(--mono); font-size:11.5px; color:var(--text-dim); line-height:2;">
+                  AI_埃塞俄比亚_浅烘_v1.4.0_001<br>
+                  AI_埃塞俄比亚_浅烘_v1.4.0_002<br>
+                  AI_埃塞俄比亚_浅烘_v1.4.0_003
+                </div>
+              </div>
+              <div class="section-note">目标账号数 &gt; 1000，预计耗时约 40 分钟。</div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+    </div>
+  </main>
+</div>
+
+<!-- ============ 规则编辑抽屉 (5.3) ============ -->
+<div class="drawer-backdrop" id="drawerBackdrop" onclick="closeDrawer()"></div>
+<div class="drawer" id="ruleDrawer">
+  <div class="drawer-head">
+    <div style="font-weight:600;">编辑规则 · 偏苦</div>
+    <div class="x-close" onclick="closeDrawer()">✕</div>
+  </div>
+  <div class="drawer-body">
+    <div class="field"><label class="field-label">问题标签</label><select class="input"><option>偏苦</option></select></div>
+    <div class="field-row">
+      <div class="field"><label class="field-label">调整参数类型</label><select class="input"><option>水温</option><option>研磨度</option><option>粉量</option></select></div>
+      <div class="field"><label class="field-label">调整方向</label><select class="input"><option>减少</option><option>增加</option></select></div>
+    </div>
+    <div class="field-row">
+      <div class="field"><label class="field-label">数值范围（最小）</label><input class="input" value="1"></div>
+      <div class="field"><label class="field-label">数值范围（最大）</label><input class="input" value="2"></div>
+    </div>
+    <div class="field"><label class="field-label">优先级（1–100，越小越优先）</label><input class="input" value="50"></div>
+    <div class="field"><label class="field-label">备注</label><textarea class="input" rows="3">过度萃取 / 水温过高导致的苦味调整</textarea></div>
+    <hr class="rule">
+    <div class="panel" style="background:var(--bg-2);">
+      <div class="panel-title">规则测试</div>
+      <div class="field-hint">输入当前曲线参数 + 问题标签，模拟输出调整方案，确认无误后再保存。</div>
+      <button class="btn sm ghost" style="margin-top:8px;">运行测试</button>
+    </div>
+  </div>
+  <div class="drawer-foot">
+    <button class="btn ghost" onclick="closeDrawer()">取消</button>
+    <button class="btn primary" onclick="closeDrawer()">保存</button>
+  </div>
+</div>
+
+<script>
+  // ---- 侧边导航切换 ----
+  const navItems = document.querySelectorAll('.nav-item');
+  const modules = document.querySelectorAll('.module');
+  const crumbTitle = document.getElementById('crumbTitle');
+  navItems.forEach(item => {
+    item.addEventListener('click', () => {
+      navItems.forEach(n => n.classList.remove('is-active'));
+      item.classList.add('is-active');
+      modules.forEach(m => m.classList.remove('is-active'));
+      document.getElementById(item.dataset.target.replace('mod-','mod-')).classList.add('is-active');
+      crumbTitle.textContent = item.querySelector('.nav-label').textContent;
+      document.querySelector('.content').scrollTop = 0;
+    });
+  });
+
+  // ---- 通用 tab 切换（同 tabgroup 内联动 tab 与 tabpanel） ----
+  document.querySelectorAll('.tab').forEach(tab => {
+    tab.addEventListener('click', () => {
+      const group = tab.dataset.tabgroup;
+      switchTab(group, tab.dataset.tab);
+    });
+  });
+  function switchTab(group, name){
+    document.querySelectorAll(`.tab[data-tabgroup="${group}"]`).forEach(t=>{
+      t.classList.toggle('is-active', t.dataset.tab === name);
+    });
+    document.querySelectorAll(`.tabpanel[data-tabgroup="${group}"]`).forEach(p=>{
+      p.classList.toggle('is-active', p.dataset.tab === name);
+    });
+  }
+
+  // ---- 环境切换 ----
+  document.querySelectorAll('.env-pill').forEach(p=>{
+    p.addEventListener('click', ()=>{
+      document.querySelectorAll('.env-pill').forEach(x=>x.classList.remove('is-active'));
+      p.classList.add('is-active');
+    });
+  });
+
+  // ---- 角色切换（映射 5.x.3 权限边界表） ----
+  const roleSelect = document.getElementById('roleSelect');
+  const roleHint = document.getElementById('roleHint');
+  document.body.dataset.role = roleSelect.value;
+  roleSelect.addEventListener('change', ()=>{
+    document.body.dataset.role = roleSelect.value;
+    const hints = {
+      '运营':'当前身份：运营。可查看大部分列表、创建/执行曲线分发任务；模型/Prompt/规则/训练相关的新建与发布操作已按权限表置灰。',
+      '算法工程师':'当前身份：算法工程师。可编辑 dev/staging 配置、创建训练任务；发布 / 回滚 prod 与硬删除需管理员，已按权限表置灰。',
+      '管理员':'当前身份：管理员。拥有全部操作权限。'
+    };
+    roleHint.textContent = hints[roleSelect.value];
+  });
+  roleSelect.dispatchEvent(new Event('change'));
+
+  // ---- 5.4 链路详情展开 ----
+  function toggleTrace(row){
+    const next = row.nextElementSibling;
+    next.style.display = next.style.display === 'none' ? 'table-row' : 'none';
+  }
+
+  // ---- 5.3 规则编辑抽屉 ----
+  function openDrawer(){
+    document.getElementById('ruleDrawer').classList.add('is-open');
+    document.getElementById('drawerBackdrop').classList.add('is-open');
+  }
+  function closeDrawer(){
+    document.getElementById('ruleDrawer').classList.remove('is-open');
+    document.getElementById('drawerBackdrop').classList.remove('is-open');
+  }
+</script>
