@@ -1,0 +1,624 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<title>自动检测 - 界面原型</title>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    background: #0c0c0d;
+    font-family: -apple-system, "PingFang SC", "Microsoft YaHei", sans-serif;
+    color: #e8eaed;
+    display: flex;
+    min-height: 100vh;
+  }
+
+  :root {
+    --bg: #161618;
+    --bg-2: #1d1d20;
+    --card: #24242a;
+    --card-2: #2b2b32;
+    --line: #333339;
+    --text-1: #f2f3f5;
+    --text-2: #a3a6ad;
+    --text-3: #6b6e76;
+    --purple: #6c5ce7;
+    --purple-dim: #2c2a4a;
+    --ok: #34d399;
+    --ok-dim: #123b2e;
+    --danger: #f65e5e;
+    --danger-dim: #40191c;
+    --blue: #4fa3f7;
+    --blue-dim: #16324f;
+    --mono: "SFMono-Regular", Consolas, monospace;
+  }
+
+  /* ============ 左侧导航 ============ */
+  .sidebar {
+    width: 220px; flex: none; background: #0d0d0f;
+    display: flex; flex-direction: column; align-items: center;
+    padding: 28px 20px; gap: 6px; border-right: 1px solid #1c1c1f;
+  }
+  .home-icon {
+    width: 56px; height: 56px; border-radius: 16px; background: #fff;
+    display: flex; align-items: center; justify-content: center; margin-bottom: 30px;
+    font-size: 22px; color: #111;
+  }
+  .nav-item {
+    width: 100%; text-align: center; padding: 13px 0; border-radius: 10px;
+    color: var(--text-2); font-size: 14.5px; cursor: pointer; transition: all 0.15s;
+  }
+  .nav-item:hover { color: var(--text-1); }
+  .nav-item.active { background: var(--purple); color: #fff; font-weight: 500; }
+
+  /* ============ 主内容 ============ */
+  .main { flex: 1; display: flex; flex-direction: column; min-width: 0; }
+
+  .tabbar {
+    display: flex; gap: 14px; padding: 30px 36px 20px; flex-wrap: wrap; align-items: center;
+  }
+  .tab {
+    padding: 15px 26px; border-radius: 12px; background: #e9eaec; color: #17181a;
+    font-size: 15px; font-weight: 500; cursor: pointer; border: 2px solid transparent;
+  }
+  .tab.active { border-color: var(--purple); background: #fff; }
+  .tab-spacer { flex: 1; }
+  .run-btn {
+    padding: 13px 22px; border-radius: 10px; border: none; background: var(--purple);
+    color: #fff; font-size: 14px; font-weight: 500; cursor: pointer; display: flex; align-items: center; gap: 8px;
+  }
+  .run-btn:disabled { opacity: 0.5; cursor: default; }
+  .run-btn.secondary { background: var(--card-2); color: var(--text-2); }
+  .run-btn .spinner {
+    width: 13px; height: 13px; border-radius: 50%; border: 2px solid rgba(255,255,255,0.4);
+    border-top-color: #fff; display: none; animation: spin 0.8s linear infinite;
+  }
+  .run-btn.running .spinner { display: inline-block; }
+  @keyframes spin { to { transform: rotate(360deg); } }
+
+  .canvas-wrap { flex: 1; padding: 10px 36px 30px; overflow: auto; }
+  .canvas {
+    background: var(--bg); border: 1px solid var(--line); border-radius: 16px;
+    padding: 40px 36px; min-height: 520px; display: flex; flex-direction: column; gap: 26px; justify-content: flex-start;
+  }
+
+  /* ---- flow row & nodes ---- */
+  .flow-row { display: flex; align-items: center; flex-wrap: wrap; gap: 0; }
+  .node {
+    position: relative; width: 108px; flex: none;
+    background: var(--card); border: 1px solid var(--line); border-radius: 12px;
+    padding: 16px 8px; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 6px;
+    text-align: center; min-height: 62px; transition: border-color 0.2s, background 0.2s;
+  }
+  .node .label { font-size: 12px; color: var(--text-1); line-height: 1.35; }
+  .node .sub { font-size: 10px; color: var(--text-3); font-family: var(--mono); }
+  .node.outlet { background: var(--card-2); border-color: #45454f; }
+
+  .status-badge {
+    position: absolute; top: -8px; right: -8px; width: 22px; height: 22px; border-radius: 50%;
+    display: flex; align-items: center; justify-content: center; font-size: 12px;
+    background: #3a3a41; border: 2px solid var(--bg); color: var(--text-3);
+  }
+  .status-badge.testing { background: var(--blue-dim); color: var(--blue); }
+  .status-badge.testing::after {
+    content: ''; position: absolute; inset: -3px; border-radius: 50%;
+    border: 2px solid var(--blue); border-top-color: transparent; animation: spin 0.7s linear infinite;
+  }
+  .status-badge.pass { background: var(--ok-dim); color: var(--ok); }
+  .status-badge.fail { background: var(--danger-dim); color: var(--danger); }
+  .status-badge.skipped { background: #2c2c31; color: var(--text-3); }
+  .node.fail-node { border-color: var(--danger); }
+  .node.pass-node { border-color: var(--ok-dim); }
+  .node.skip-node { border-style: dashed; opacity: 0.45; }
+
+  .arrow { flex: none; width: 34px; height: 2px; background: repeating-linear-gradient(90deg, var(--text-3) 0 5px, transparent 5px 9px); position: relative; margin: 0 2px; }
+  .arrow::after {
+    content: ''; position: absolute; right: -1px; top: 50%; transform: translateY(-50%);
+    border: 5px solid transparent; border-left-color: var(--text-3);
+  }
+
+  .branch-block { display: flex; flex-direction: column; gap: 10px; }
+  .branch-line { display: flex; align-items: center; }
+  .merge-label {
+    font-size: 10.5px; color: var(--text-3); padding: 2px 10px; align-self: center;
+  }
+
+  .section-tag {
+    font-size: 11px; color: var(--text-3); text-transform: uppercase; letter-spacing: 0.06em;
+    margin-bottom: -14px;
+  }
+
+  /* ---- 清洗流程：二级标签 + 阶段分组 ---- */
+  .subtabbar {
+    display: flex; gap: 10px; padding: 0 36px 18px; flex-wrap: wrap;
+  }
+  .subtab {
+    padding: 9px 18px; border-radius: 9px; background: var(--card); border: 1px solid var(--line);
+    color: var(--text-2); font-size: 13px; cursor: pointer;
+  }
+  .subtab.active { background: var(--purple-dim); border-color: var(--purple); color: #cabdff; }
+
+  .stage-block { display: flex; flex-direction: column; gap: 12px; }
+  .stage-title {
+    font-size: 12.5px; color: var(--text-2); font-weight: 500;
+    display: flex; align-items: center; gap: 8px;
+  }
+  .stage-title::before {
+    content: ''; width: 6px; height: 6px; border-radius: 50%; background: var(--purple);
+  }
+  .stage-divider { height: 1px; background: var(--line); margin: 4px 0 2px; }
+
+  .loop-badge {
+    flex: none; padding: 8px 12px; border-radius: 10px; background: var(--card-2);
+    border: 1px dashed var(--line); color: var(--text-3); font-size: 11px; text-align: center;
+    display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 2px;
+    height: fit-content; align-self: center; margin-left: 4px;
+  }
+  .loop-badge .n { font-size: 13px; color: var(--text-2); font-family: var(--mono); }
+
+  /* ---- summary bar ---- */
+  .summary {
+    margin: 0 36px 26px; padding: 16px 22px; border-radius: 12px;
+    background: var(--card); border: 1px solid var(--line);
+    display: none; align-items: center; gap: 18px;
+  }
+  .summary.show { display: flex; }
+  .summary.all-pass { border-color: var(--ok-dim); }
+  .summary.has-fail { border-color: var(--danger-dim); }
+  .summary .s-title { font-size: 14px; font-weight: 500; }
+  .summary .s-title.ok { color: var(--ok); }
+  .summary .s-title.bad { color: var(--danger); }
+  .summary .s-detail { font-size: 12.5px; color: var(--text-2); flex: 1; }
+  .summary button {
+    background: var(--card-2); border: 1px solid var(--line); color: var(--text-2);
+    font-size: 12.5px; padding: 8px 16px; border-radius: 8px; cursor: pointer;
+  }
+</style>
+</head>
+<body>
+
+<div class="sidebar">
+  <div class="home-icon">⌂</div>
+  <div class="nav-item">维修测试</div>
+  <div class="nav-item">水路图</div>
+  <div class="nav-item">功能配置</div>
+  <div class="nav-item">校准</div>
+  <div class="nav-item">产品设置</div>
+  <div class="nav-item active" id="navAutoCheck">自动检测</div>
+</div>
+
+<div class="main">
+  <div class="tabbar" id="tabbar"></div>
+  <div class="subtabbar" id="subtabbar"></div>
+  <div class="summary" id="summary">
+    <div class="s-title" id="summaryTitle">检测完成</div>
+    <div class="s-detail" id="summaryDetail"></div>
+    <button onclick="resetCurrent()">重新检测</button>
+  </div>
+  <div class="canvas-wrap">
+    <div class="canvas" id="canvas"></div>
+  </div>
+</div>
+
+<script>
+/* ===================== 数据定义 ===================== */
+const N = (icon, label, sub) => ({ icon, label, sub: sub || "", status: "idle" });
+
+// 每个 flow 是一组"行"，每行是一串串联节点（简单链路），可选 label 作为该组的小标题
+// type: 'row' 普通串联 | 'branch' 两条支路合并
+// 节点名称均取自"维修测试"各模组真实部件（豆仓/研磨/萃取/称重/冲泡/前面板/奶沫/底板），
+// 按"水路图"的真实走向串联成完整出品链路
+const categories = {
+  "热水": {
+    rows: [
+      { type: "row", label: "进水与加热（底板 + 冲泡模组）", nodes: [
+        N("🔀","主进水电磁阀"), N("📟","进水压力传感器"), N("🌡️","进水NTC TDS","36℃/400ppm"),
+        N("📟","主进水流量计"), N("⚙️","变压泵"),
+        N("🌡️","冲泡锅炉温度探针1","98℃"), N("🌡️","冲泡锅炉温度探针2","98℃"), N("🔥","加热继电器")
+      ]},
+      { type: "row", label: "出水路径（前面板）", nodes: [
+        N("🔀","热水电磁阀"), N("🔀","热水切换电磁阀"), N("☕","热水出口")
+      ]}
+    ]
+  },
+  "美式": {
+    rows: [
+      { type: "row", label: "进水与加热（底板 + 冲泡模组）", nodes: [
+        N("","主进水电磁阀"), N("","进水压力传感器"), N("","进水NTC TDS","36℃/400ppm"),
+        N("","主进水流量计"), N("","变压泵"),
+        N("","冲泡锅炉温度探针1","98℃"), N("","冲泡锅炉温度探针2","98℃"), N("","加热继电器")
+      ]},
+      { type: "row", label: "取豆与研磨（豆仓 + 研磨模组，A/B/C/D 四仓位全检）", nodes: [
+        N("","豆仓缺豆信号-A"), N("","研磨粗细电机-A"), N("","研磨电机-A"),
+        N("","豆仓缺豆信号-B"), N("","研磨粗细电机-B"), N("","研磨电机-B"),
+        N("","豆仓缺豆信号-C"), N("","研磨粗细电机-C"), N("","研磨电机-C"),
+        N("","豆仓缺豆信号-D"), N("","研磨粗细电机-D"), N("","研磨电机-D")
+      ]},
+      { type: "row", label: "布粉与称重（萃取-称重模组）", nodes: [
+        N("","粉仓震动电机"), N("","下粉仓电机"), N("","称重感应器","20g")
+      ]},
+      { type: "row", label: "压粉与萃取（萃取模组 + 冲泡模组）", nodes: [
+        N("","摆粉电机(接粉)"), N("","冲泡电磁阀"), N("","压粉电机(压粉)"),
+        N("","防回流电磁阀"), N("","流量计","65ml"), N("","萃取电磁阀")
+      ]},
+      { type: "row", label: "浓缩液出品与排渣（萃取模组 + 前面板）", nodes: [
+        N("","出液电磁阀"), N("","出液杆移动电机"), N("","摆粉电机(排粉)")
+      ]},
+      { type: "row", label: "兑入热水稀释（萃取模组 + 冲泡模组 + 前面板）", nodes: [
+        N("","热水电磁阀"), N("","冷水比例阀","比例20%"), N("","热水切换电磁阀")
+      ]},
+      { type: "row", nodes: [ N("","美式出口") ] }
+    ]
+  },
+  "咖啡": {
+    rows: [
+      { type: "row", label: "进水与加热（底板 + 冲泡模组）", nodes: [
+        N("🔀","主进水电磁阀"), N("📟","进水压力传感器"), N("🌡️","进水NTC TDS"),
+        N("📟","主进水流量计"), N("⚙️","变压泵"),
+        N("🌡️","冲泡锅炉温度探针1"), N("🌡️","冲泡锅炉温度探针2"), N("🔥","加热继电器")
+      ]},
+      { type: "row", label: "取豆与研磨（豆仓 + 研磨模组，A/B/C/D 四仓位全检）", nodes: [
+        N("","豆仓缺豆信号-A"), N("","研磨粗细电机-A"), N("","研磨电机-A"),
+        N("","豆仓缺豆信号-B"), N("","研磨粗细电机-B"), N("","研磨电机-B"),
+        N("","豆仓缺豆信号-C"), N("","研磨粗细电机-C"), N("","研磨电机-C"),
+        N("","豆仓缺豆信号-D"), N("","研磨粗细电机-D"), N("","研磨电机-D")
+      ]},
+      { type: "row", label: "布粉与称重（萃取-称重模组）", nodes: [
+        N("📳","粉仓震动电机"), N("⚙️","下粉仓电机"), N("⚖️","称重感应器","20g")
+      ]},
+      { type: "row", label: "压粉与萃取（萃取模组 + 冲泡模组）", nodes: [
+        N("🎚","摆粉电机(接粉)"), N("🔀","冲泡电磁阀"), N("🎚","压粉电机(压粉)"),
+        N("🔀","防回流电磁阀"), N("📟","流量计","65ml"), N("🔀","萃取电磁阀")
+      ]},
+      { type: "row", label: "出品与排渣（萃取模组 + 前面板）", nodes: [
+        N("🔀","出液电磁阀"), N("⚙️","出液杆移动电机"), N("🎚","摆粉电机(排粉)"), N("☕","咖啡出口")
+      ]}
+    ]
+  },
+  "蒸汽": {
+    rows: [
+      { type: "row", label: "进水与升温（底板 + 蒸汽模组）", nodes: [
+        N("🔀","主进水电磁阀"), N("📟","进水压力传感器"), N("⚙️","变压泵"),
+        N("🔀","锅炉进水电磁阀"), N("🌡️","蒸汽锅炉温度探针","98℃"), N("💧","水位探针","高水位"),
+        N("🔥","加热继电器"), N("📟","蒸汽压力传感器","1.3bar")
+      ]},
+      { type: "row", label: "出蒸汽路径（前面板）", nodes: [
+        N("🌡️","蒸汽杆热电偶","56℃"), N("🔀","蒸汽杆电磁阀"), N("☁️","蒸汽出口")
+      ]},
+      { type: "row", label: "维护用（常闭，不参与出品）", nodes: [
+        N("🔀","锅炉排水电磁阀")
+      ]}
+    ]
+  },
+  "牛奶": {
+    rows: [
+      { type: "row", label: "蒸汽供给（蒸汽模组）", nodes: [
+        N("🔀","锅炉进水电磁阀"), N("🌡️","蒸汽锅炉温度探针"), N("🔥","加热继电器"), N("📟","蒸汽压力传感器")
+      ]},
+      { type: "row", label: "进奶与配气（奶沫模组）", nodes: [
+        N("🔀","进奶电磁阀1"), N("🔀","进奶电磁阀2"), N("🌡️","进奶NTC TDS","36℃/400ppm"),
+        N("🔀","热奶空气电磁阀"), N("🔀","热奶空气高频阀"), N("🔀","奶沫蒸汽电磁阀")
+      ]},
+      { type: "row", label: "打奶出品（奶沫模组）", nodes: [
+        N("⚙️","奶泵","20ml/s"), N("🌡️","出奶NTC TDS","76℃/400ppm"), N("🔀","奶沫电磁阀"), N("🥛","牛奶出口")
+      ]}
+    ]
+  },
+  "触摸屏": {
+    independent: true,
+    rows: [
+      { type: "row", nodes: [
+        N("🖥️","显示模块"), N("🎨","纯色满屏测试"), N("📊","灰阶/漏光测试")
+      ]},
+      { type: "row", nodes: [
+        N("👆","触摸模块"), N("🔲","网格触控测试"), N("✌️","多点/滑动测试")
+      ]},
+      { type: "row", nodes: [
+        N("🔘","实体按键"), N("⏻","按键响应测试")
+      ]}
+    ]
+  }
+};
+
+// ===== 清洗：按真实清洗程序梳理的阶段化流程（每个程序内部是严格顺序执行的链路）=====
+// 每个程序 = 若干"阶段"，每个阶段 = 一组顺序节点（部分节点带循环次数标注 loop）
+// 阀门/电机名称同样对应"维修测试"里的真实部件
+const cleaningPrograms = {
+  "奶路冲洗": [
+    { title: "泄压口冲洗", loop: "循环 6 次", nodes: [
+      N("🔀","奶腔清洗进水电磁阀","放水3s"), N("⏱","等待","2s")
+    ]},
+    { title: "出奶口冲洗", loop: "循环 6 次", nodes: [
+      N("🔀","奶沫电磁阀","放水3s"), N("⏱","等待","2s")
+    ]},
+    { title: "进奶口 1 冲洗", loop: "循环 3 次", nodes: [
+      N("🔀","进奶电磁阀1","放水3s"), N("⏱","等待","2s")
+    ]},
+    { title: "进奶口 2 冲洗", loop: "循环 3 次", nodes: [
+      N("🔀","进奶电磁阀2","放水3s"), N("⏱","等待","2s")
+    ]},
+    { title: "全管路吹气排空", nodes: [
+      N("🔀","热奶空气电磁阀"), N("🔀","冷奶空气电磁阀"), N("🔀","进奶电磁阀1"), N("🔀","进奶电磁阀2")
+    ]}
+  ],
+  "咖啡冲洗": [
+    { title: "准备阶段", nodes: [
+      N("🎚","压粉电机定位"), N("🎚","摆粉电机半入冲泡器")
+    ]},
+    { title: "上下活塞及管道冲洗", nodes: [
+      N("🎚","摆粉电机冲洗上活塞","1.5s"), N("🎚","摆粉电机冲洗下活塞排渣","1s")
+    ]}
+  ],
+  "奶沫药丸清洗": [
+    { title: "第一阶段：冲洗冲泡仓及上下活塞", nodes: [
+      N("🎚","压粉/摆粉电机定位"),
+      N("🎚","摆粉电机冲洗上活塞","1.5s"),
+      N("🎚","摆粉电机冲洗下活塞排渣","1s"),
+      N("💊","奶沫药丸电机-左","下药丸")
+    ]},
+    { title: "第二阶段：药液循环去垢", nodes: [
+      N("💧","放水溶解药液","4s+5s"),
+      N("🔀","奶沫电磁阀","药液冲出奶口"),
+      N("🔀","进奶电磁阀1","药液冲进奶口1"),
+      N("🔀","进奶电磁阀2","药液冲进奶口2")
+    ]},
+    { title: "第三阶段：机械排渣与初步清水过水", loop: "分两段循环", nodes: [
+      N("💧","清水冲上活塞及管道","4s/2s×3"),
+      N("💧","清水冲下管道","2s/2s×2")
+    ]},
+    { title: "第四阶段：衔接标准冲洗", nodes: [
+      N("🔁","自动触发「奶路冲洗流程」")
+    ]}
+  ],
+  "咖啡药丸清洗": [
+    { title: "第一阶段：冲洗冲泡仓及上下活塞", nodes: [
+      N("🎚","压粉/摆粉电机定位"),
+      N("🎚","摆粉电机冲洗上活塞及管道","1.5s"),
+      N("🎚","摆粉电机冲洗下活塞排渣","1s"),
+      N("💊","咖啡药丸电机-右","下药丸")
+    ]},
+    { title: "第二阶段：药液循环去垢", loop: "循环 3 次", nodes: [
+      N("💧","放水溶解药液","8s+30s")
+    ]},
+    { title: "第三阶段：机械排渣与初步清水过水", loop: "循环 3 次", nodes: [
+      N("💧","清水冲冲泡仓及管道","4s+5s"),
+      N("🗑️","冲泡仓排水至废渣盒")
+    ]}
+  ]
+};
+
+// 演示用：每个分类中预设 0~1 个"异常"节点（按 label 匹配），其余全部通过
+const demoFails = {
+  "热水": ["热水切换电磁阀"],
+  "美式": [],
+  "咖啡": ["出液电磁阀"],
+  "蒸汽": [],
+  "牛奶": ["奶沫电磁阀"],
+  "触摸屏": ["网格触控测试"]
+};
+
+// 清洗子程序的演示故障（按子程序名分别配置）
+const demoCleaningFails = {
+  "奶路冲洗": [],
+  "咖啡冲洗": [],
+  "奶沫药丸清洗": ["进奶电磁阀2"],
+  "咖啡药丸清洗": []
+};
+
+const tabNames = ["热水", "美式", "咖啡", "蒸汽", "牛奶", "清洗", "触摸屏"];
+const cleaningProgramNames = Object.keys(cleaningPrograms);
+let currentTab = tabNames[0];
+let currentCleaningProgram = cleaningProgramNames[0];
+let running = false;
+
+/* ===================== 渲染 ===================== */
+function renderTabs() {
+  const bar = document.getElementById("tabbar");
+  bar.innerHTML = "";
+  tabNames.forEach(name => {
+    const t = document.createElement("div");
+    t.className = "tab" + (name === currentTab ? " active" : "");
+    t.textContent = name;
+    t.onclick = () => { if (!running) { currentTab = name; renderAll(); } };
+    bar.appendChild(t);
+  });
+  const spacer = document.createElement("div");
+  spacer.className = "tab-spacer";
+  bar.appendChild(spacer);
+
+  const runBtn = document.createElement("button");
+  runBtn.className = "run-btn" + (running ? " running" : "");
+  runBtn.id = "runBtn";
+  runBtn.innerHTML = '<span class="spinner"></span><span>' + (running ? "检测中…" : "开始自动检测") + '</span>';
+  runBtn.disabled = running;
+  runBtn.onclick = () => runCheck(currentTab);
+  bar.appendChild(runBtn);
+
+  renderSubtabs();
+}
+
+function renderSubtabs() {
+  const subbar = document.getElementById("subtabbar");
+  subbar.innerHTML = "";
+  if (currentTab !== "清洗") { subbar.style.display = "none"; return; }
+  subbar.style.display = "flex";
+  cleaningProgramNames.forEach(name => {
+    const t = document.createElement("div");
+    t.className = "subtab" + (name === currentCleaningProgram ? " active" : "");
+    t.textContent = name;
+    t.onclick = () => { if (!running) { currentCleaningProgram = name; renderAll(); } };
+    subbar.appendChild(t);
+  });
+}
+
+function nodeHTML(n, idx) {
+  const cls = n.status === "pass" ? "pass-node" : n.status === "fail" ? "fail-node" : n.status === "skipped" ? "skip-node" : "";
+  const badgeCls = n.status === "idle" ? "" : n.status;
+  const badgeContent = n.status === "pass" ? "✓" : n.status === "fail" ? "!" : n.status === "skipped" ? "–" : n.status === "testing" ? "" : "";
+  return `
+    <div class="node ${cls}" data-idx="${idx}">
+      <div class="status-badge ${badgeCls}">${badgeContent}</div>
+      <div class="label">${n.label}</div>
+      ${n.sub ? `<div class="sub">${n.sub}</div>` : ""}
+    </div>`;
+}
+
+function renderCanvas() {
+  const canvas = document.getElementById("canvas");
+  let html = "";
+
+  if (currentTab === "清洗") {
+    const stages = cleaningPrograms[currentCleaningProgram];
+    stages.forEach((stage, si) => {
+      html += `<div class="stage-block">`;
+      html += `<div class="stage-title">${stage.title}${stage.loop ? ` <span style="color:var(--text-3);font-weight:400;">（${stage.loop}）</span>` : ""}</div>`;
+      html += `<div class="flow-row">`;
+      stage.nodes.forEach((n, i) => {
+        html += nodeHTML(n, si + "-" + i);
+        if (i < stage.nodes.length - 1) html += `<div class="arrow"></div>`;
+      });
+      html += `</div>`;
+      if (si < stages.length - 1) html += `<div class="stage-divider"></div>`;
+      html += `</div>`;
+    });
+    canvas.innerHTML = html;
+    return;
+  }
+
+  const data = categories[currentTab];
+  data.rows.forEach(row => {
+    if (row.type === "row") {
+      if (row.label) html += `<div class="stage-title" style="margin-bottom:-6px;">${row.label}</div>`;
+      html += `<div class="flow-row">`;
+      row.nodes.forEach((n, i) => {
+        html += nodeHTML(n, i);
+        if (i < row.nodes.length - 1) html += `<div class="arrow"></div>`;
+      });
+      html += `</div>`;
+    } else if (row.type === "branch") {
+      html += `<div class="branch-block">`;
+      html += `<div class="branch-line">`;
+      row.a.forEach((n, i) => { html += nodeHTML(n, "a"+i); if (i < row.a.length-1) html += `<div class="arrow"></div>`; });
+      html += `</div>`;
+      html += `<div class="branch-line">`;
+      row.b.forEach((n, i) => { html += nodeHTML(n, "b"+i); if (i < row.b.length-1) html += `<div class="arrow"></div>`; });
+      html += `</div>`;
+      html += `<div class="merge-label">↓ 汇合 → ${row.mergeLabel}</div>`;
+      html += `</div>`;
+    }
+  });
+  canvas.innerHTML = html;
+}
+
+function collectAllNodes() {
+  // 返回当前分类（或清洗子程序）下所有节点的扁平引用列表，用于顺序执行检测动画
+  if (currentTab === "清洗") {
+    let list = [];
+    cleaningPrograms[currentCleaningProgram].forEach(stage => stage.nodes.forEach(n => list.push(n)));
+    return list;
+  }
+  const data = categories[currentTab];
+  let list = [];
+  data.rows.forEach(row => {
+    if (row.type === "row") row.nodes.forEach(n => list.push(n));
+    else { row.a.forEach(n => list.push(n)); row.b.forEach(n => list.push(n)); }
+  });
+  return list;
+}
+
+function renderAll() {
+  renderTabs();
+  renderCanvas();
+  document.getElementById("summary").classList.remove("show");
+}
+
+/* ===================== 自动检测逻辑 ===================== */
+function runCheck(tabName) {
+  if (running) return;
+  running = true;
+  currentTab = tabName;
+  // reset statuses
+  collectAllNodes().forEach(n => n.status = "idle");
+  renderAll();
+  renderTabs(); // show running state on button
+
+  const nodes = collectAllNodes();
+  const isCleaning = tabName === "清洗";
+  const flowLabel = isCleaning ? currentCleaningProgram : tabName;
+  const fails = isCleaning ? (demoCleaningFails[currentCleaningProgram] || []) : (demoFails[tabName] || []);
+  // 清洗程序本身就是严格顺序的物理流程，异常同样即时中断；只有触摸屏各测试项互相独立
+  const isChain = isCleaning ? true : !categories[tabName].independent;
+  let i = 0;
+  let stoppedAt = null;
+
+  function step() {
+    if (i > 0) {
+      // finalize previous node
+      const prev = nodes[i-1];
+      prev.status = fails.includes(prev.label) ? "fail" : "pass";
+      renderCanvas();
+
+      if (prev.status === "fail" && isChain) {
+        // 链路型：后续节点全部标记为"未测试（已跳过）"，检测中止
+        for (let j = i; j < nodes.length; j++) nodes[j].status = "skipped";
+        renderCanvas();
+        stoppedAt = prev.label;
+        running = false;
+        renderTabs();
+        showSummary(flowLabel, nodes, fails, stoppedAt);
+        return;
+      }
+    }
+    if (i >= nodes.length) {
+      running = false;
+      renderTabs();
+      showSummary(flowLabel, nodes, fails, null);
+      return;
+    }
+    nodes[i].status = "testing";
+    renderCanvas();
+    i++;
+    setTimeout(step, 320);
+  }
+  step();
+}
+
+function showSummary(tabName, nodes, fails, stoppedAt) {
+  const summary = document.getElementById("summary");
+  const title = document.getElementById("summaryTitle");
+  const detail = document.getElementById("summaryDetail");
+  summary.classList.add("show");
+
+  if (stoppedAt) {
+    // 链路在某个节点中断，后面的项没有测
+    const skippedCount = nodes.filter(n => n.status === "skipped").length;
+    const passedCount = nodes.filter(n => n.status === "pass").length;
+    summary.className = "summary show has-fail";
+    title.className = "s-title bad";
+    title.textContent = "⚠ 检测中止";
+    detail.textContent = `${tabName}：检测到"${stoppedAt}"异常，链路已中断，检测停止。前面 ${passedCount} 项正常，后面 ${skippedCount} 项未测试。请先排查"${stoppedAt}"后重新检测。`;
+  } else if (fails.length === 0) {
+    summary.className = "summary show all-pass";
+    title.className = "s-title ok";
+    title.textContent = "✓ 检测完成";
+    detail.textContent = `${tabName} 全部 ${nodes.length} 项正常，未发现异常。`;
+  } else {
+    // 独立测试型（触摸屏）：即使有异常也会跑完全部项
+    summary.className = "summary show has-fail";
+    title.className = "s-title bad";
+    title.textContent = "⚠ 检测完成，发现异常";
+    detail.textContent = `${tabName} 共 ${nodes.length} 项（各项独立检测），${nodes.length - fails.length} 项通过，${fails.length} 项异常：${fails.join("、")}。各测试项互不影响，异常项可单独重测。`;
+  }
+}
+
+function resetCurrent() {
+  collectAllNodes().forEach(n => n.status = "idle");
+  document.getElementById("summary").classList.remove("show");
+  renderAll();
+}
+
+renderAll();
+</script>
+
+</body>
+</html>
