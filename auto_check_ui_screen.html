@@ -1,0 +1,362 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>触摸屏自检 · 检测页面细化</title>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  html, body {
+    background: #131318;
+    font-family: -apple-system, "PingFang SC", "Microsoft YaHei", sans-serif;
+    color: #eceef2;
+    min-height: 100vh;
+  }
+  body { padding: 36px 20px 60px; display: flex; flex-direction: column; align-items: center; gap: 26px; }
+
+  .intro { max-width: 720px; text-align: center; }
+  .intro .eyebrow { font-size: 13px; color: #8b8fa3; margin-bottom: 8px; }
+  .intro h1 { font-size: 22px; font-weight: 600; margin-bottom: 8px; }
+  .intro p { font-size: 13.5px; color: #a2a6b4; line-height: 1.7; }
+
+  /* ---- 步骤切换 ---- */
+  .steps {
+    display: flex; gap: 8px; flex-wrap: wrap; justify-content: center;
+    background: #1b1b22; padding: 6px; border-radius: 14px; border: 1px solid #2a2a33;
+  }
+  .step-btn {
+    padding: 10px 16px; border-radius: 10px; border: none; background: transparent;
+    color: #9498a8; font-size: 13px; cursor: pointer; display: flex; align-items: center; gap: 7px;
+    transition: all .15s;
+  }
+  .step-btn .n {
+    width: 18px; height: 18px; border-radius: 50%; background: #2c2c36; color: #8b8fa3;
+    font-size: 10.5px; display: flex; align-items: center; justify-content: center; flex: none;
+  }
+  .step-btn.active { background: #2e2e6b; color: #fff; }
+  .step-btn.active .n { background: #7b7bf5; color: #fff; }
+  .step-btn:hover:not(.active) { color: #cfd1dc; }
+
+  /* ---- 设备外框：模拟机器 16:9 触摸屏 ---- */
+  .stage { width: 100%; max-width: 1100px; }
+  .device-frame {
+    position: relative; width: 100%; aspect-ratio: 16 / 9.4; border-radius: 26px;
+    overflow: hidden; box-shadow: 0 30px 70px rgba(0,0,0,.55), 0 0 0 1px #000;
+    user-select: none; cursor: pointer;
+  }
+  .device-frame.no-pointer { cursor: default; }
+  .bg-shell {
+    position: absolute; inset: 0;
+    background: linear-gradient(160deg, #dcdde2 0%, #b7b8c1 22%, #7c7d88 52%, #47474f 78%, #2a2a30 100%);
+  }
+  .bg-shell::after {
+    content: ''; position: absolute; inset: 0;
+    background: radial-gradient(circle at 8% 92%, rgba(0,0,0,.35), transparent 40%),
+                radial-gradient(circle at 95% 90%, rgba(0,0,0,.3), transparent 38%);
+  }
+
+  /* 通用极简顶部chrome：退出 + 步骤进度，不遮挡画面检测区域 */
+  .chrome-exit, .chrome-progress {
+    position: absolute; top: 16px; z-index: 5; font-size: 11.5px;
+    padding: 7px 13px; border-radius: 999px; backdrop-filter: blur(10px);
+    background: rgba(20,20,26,.32); border: 1px solid rgba(255,255,255,.18); color: rgba(255,255,255,.85);
+    display: flex; align-items: center; gap: 6px;
+  }
+  .chrome-exit { left: 16px; }
+  .chrome-progress { right: 16px; }
+
+  .notes {
+    max-width: 1100px; width: 100%; background: #191920; border: 1px solid #26262f;
+    border-radius: 14px; padding: 18px 22px; font-size: 13px; color: #b3b6c3; line-height: 1.75;
+  }
+  .notes b { color: #e4e6ee; font-weight: 600; }
+
+  /* =============== 1. 纯色满屏测试 =============== */
+  .color-fill { position: absolute; inset: 0; display: flex; align-items: flex-end; justify-content: center; transition: background .25s; }
+  .color-hint {
+    margin-bottom: 26px; padding: 9px 18px; border-radius: 999px; font-size: 12.5px;
+    background: rgba(0,0,0,.32); backdrop-filter: blur(8px); display: flex; align-items: center; gap: 10px;
+  }
+  .color-dots { display: flex; gap: 5px; }
+  .color-dots span { width: 6px; height: 6px; border-radius: 50%; background: rgba(255,255,255,.35); }
+  .color-dots span.on { background: #fff; }
+  .flag-btn {
+    position: absolute; bottom: 16px; right: 16px; font-size: 11px; padding: 7px 12px; border-radius: 999px;
+    background: rgba(0,0,0,.28); border: 1px solid rgba(255,255,255,.25); color: rgba(255,255,255,.8); cursor: pointer;
+  }
+
+  /* =============== 2. 灰阶 / 漏光 =============== */
+  .subtab-row { position: absolute; top: 16px; left: 50%; transform: translateX(-50%); z-index: 5; display: flex; gap: 6px;
+    background: rgba(20,20,26,.32); border: 1px solid rgba(255,255,255,.16); border-radius: 999px; padding: 4px; backdrop-filter: blur(10px); }
+  .subtab { padding: 6px 14px; border-radius: 999px; font-size: 11.5px; color: rgba(255,255,255,.65); cursor: pointer; }
+  .subtab.on { background: rgba(255,255,255,.92); color: #17171c; }
+
+  .gray-wrap { position: absolute; inset: 0; display: flex; }
+  .gray-bar { flex: 1; height: 100%; position: relative; display: flex; align-items: flex-end; justify-content: center; padding-bottom: 20px; }
+  .gray-bar .lbl { font-size: 10.5px; color: rgba(255,255,255,.55); }
+  .gray-bar.light .lbl { color: rgba(0,0,0,.4); }
+
+  .leak-wrap { position: absolute; inset: 0; background: #000; }
+  .leak-corner { position: absolute; width: 26px; height: 26px; opacity: .35; }
+  .leak-corner::before, .leak-corner::after { content: ''; position: absolute; background: #6a6a76; }
+  .leak-corner::before { width: 100%; height: 1px; top: 50%; }
+  .leak-corner::after { width: 1px; height: 100%; left: 50%; }
+  .leak-tl { top: 14px; left: 14px; } .leak-tr { top: 14px; right: 14px; }
+  .leak-bl { bottom: 14px; left: 14px; } .leak-br { bottom: 14px; right: 14px; }
+  .leak-hint { position: absolute; bottom: 26px; left: 50%; transform: translateX(-50%);
+    font-size: 12px; color: rgba(255,255,255,.4); animation: fadeout 5s forwards; text-align: center; }
+  @keyframes fadeout { 0%,60% { opacity: 1; } 100% { opacity: .12; } }
+
+  /* =============== 3. 网格触控测试 =============== */
+  .grid-wrap { position: absolute; inset: 60px 16px 16px; display: grid; gap: 4px;
+    grid-template-columns: repeat(10, 1fr); grid-template-rows: repeat(6, 1fr); }
+  .cell { border-radius: 6px; background: rgba(255,255,255,.06); border: 1px solid rgba(255,255,255,.14);
+    display: flex; align-items: center; justify-content: center; transition: all .15s; cursor: pointer; }
+  .cell.on { background: rgba(123,123,245,.85); border-color: #9a9af8; box-shadow: 0 0 14px rgba(123,123,245,.55); }
+  .cell.on span { color: #fff; font-size: 12px; }
+  .coverage-pill { position: absolute; top: 16px; left: 50%; transform: translateX(-50%); z-index: 5;
+    background: rgba(20,20,26,.4); border: 1px solid rgba(255,255,255,.2); border-radius: 999px;
+    padding: 8px 16px; font-size: 12.5px; backdrop-filter: blur(10px); }
+  .coverage-pill b { color: #a9a9ff; }
+  .reset-mini { position: absolute; top: 16px; right: 16px; z-index: 5; font-size: 11px; padding: 7px 13px;
+    border-radius: 999px; background: rgba(20,20,26,.32); border: 1px solid rgba(255,255,255,.18); color: rgba(255,255,255,.8); cursor: pointer; }
+  .grid-done { position: absolute; top: 45%; left: 50%; transform: translate(-50%,-50%); z-index: 6;
+    background: rgba(24,190,140,.16); border: 1px solid rgba(52,211,153,.55); color: #6ee7b0;
+    padding: 14px 24px; border-radius: 14px; font-size: 14px; font-weight: 600; display: none; backdrop-filter: blur(10px); }
+  .grid-done.show { display: block; }
+
+  /* =============== 4. 多点 / 滑动 =============== */
+  .touch-area { position: absolute; inset: 60px 16px 16px; border-radius: 16px; background: rgba(255,255,255,.04);
+    border: 1px dashed rgba(255,255,255,.2); display: flex; align-items: center; justify-content: center; }
+  .touch-hint { font-size: 13px; color: rgba(255,255,255,.5); text-align: center; line-height: 1.9; pointer-events: none; }
+  .touch-hint b { color: rgba(255,255,255,.85); }
+  .touch-point { position: absolute; width: 46px; height: 46px; border-radius: 50%; transform: translate(-50%,-50%);
+    background: rgba(123,123,245,.28); border: 2px solid #9a9af8; display: flex; align-items: center; justify-content: center;
+    font-size: 14px; color: #fff; animation: pop .2s; }
+  @keyframes pop { from { transform: translate(-50%,-50%) scale(0.4); opacity: 0; } to { transform: translate(-50%,-50%) scale(1); opacity: 1; } }
+  .touch-count { position: absolute; top: 16px; left: 50%; transform: translateX(-50%); z-index: 5;
+    background: rgba(20,20,26,.4); border: 1px solid rgba(255,255,255,.2); border-radius: 999px; padding: 8px 16px;
+    font-size: 12.5px; backdrop-filter: blur(10px); }
+  .touch-count b { color: #a9a9ff; }
+
+  .swipe-grid { position: absolute; inset: 60px 16px 16px; display: grid; grid-template-columns: 1fr 1fr 1fr; grid-template-rows: 1fr 1fr 1fr; gap: 8px; }
+  .swipe-zone { border-radius: 14px; background: rgba(255,255,255,.05); border: 1px solid rgba(255,255,255,.14);
+    display: flex; align-items: center; justify-content: center; font-size: 22px; color: rgba(255,255,255,.5); cursor: pointer; transition: all .15s; }
+  .swipe-zone.done { background: rgba(123,123,245,.75); border-color: #9a9af8; color: #fff; box-shadow: 0 0 16px rgba(123,123,245,.5); }
+  .swipe-center { grid-column: 2; grid-row: 2; display: flex; align-items: center; justify-content: center;
+    font-size: 12px; color: rgba(255,255,255,.4); text-align: center; line-height: 1.6; }
+  .z-up { grid-column: 2; grid-row: 1; } .z-down { grid-column: 2; grid-row: 3; }
+  .z-left { grid-column: 1; grid-row: 2; } .z-right { grid-column: 3; grid-row: 2; }
+
+</style>
+</head>
+<body>
+
+<div class="intro">
+  <div class="eyebrow">维修测试 · 自动检测 · 触摸屏</div>
+  <h1>触摸屏自检 — 检测页面细化</h1>
+  <p>原流程只有「显示模块 → 纯色满屏测试 → 灰阶/漏光测试 → 触摸模块 → 网格触控测试 → 多点/滑动测试」几个节点名，没有画出技术员在机器屏幕上实际看到的画面。这台机器全部功能都通过触屏操作，没有实体按键，流程到滑动测试即结束。下面按主页面的视觉语言（浅灰到炭黑渐变、圆角毛玻璃卡片、克制的紫色标记色）把每一屏细化出来，可以直接点击试一试。</p>
+</div>
+
+<div class="steps" id="steps"></div>
+
+<div class="stage">
+  <div class="device-frame" id="frame"></div>
+</div>
+
+<div class="notes" id="notes"></div>
+
+<script>
+const steps = [
+  { id:'color', label:'纯色满屏测试' },
+  { id:'gray',  label:'灰阶 / 漏光测试' },
+  { id:'grid',  label:'网格触控测试' },
+  { id:'touch', label:'多点 / 滑动测试' },
+];
+let current = 'color';
+
+const state = {
+  colorIdx: 0,
+  colors: [
+    { name:'红色', hex:'#e8453c', light:false },
+    { name:'绿色', hex:'#33b978', light:false },
+    { name:'蓝色', hex:'#3e6fe8', light:false },
+    { name:'白色', hex:'#ffffff', light:true },
+    { name:'黑色', hex:'#0a0a0c', light:false },
+  ],
+  grayTab: 'gray',
+  gridCells: Array.from({length:60}, () => false),
+  touchTab: 'multi',
+  touchPoints: [],
+  swipe: { up:false, down:false, left:false, right:false },
+};
+
+const notesText = {
+  color: `<b>纯色满屏测试</b>：屏幕依次整屏填充红、绿、蓝、白、黑五种纯色，用来看有没有坏点、色偏、亮点。技术员轻触屏幕任意位置切换下一个颜色；底部的小圆点提示当前是第几种颜色，避免遮挡检测区域。右下角留一个很淡的「标记异常」按钮，方便某个颜色下发现坏点时直接记录，不用中断流程去别处操作。`,
+  gray:  `<b>灰阶 / 漏光测试</b>：分两个子页面，顶部小标签切换。「灰阶」用 10 条从黑到白的渐变竖条检查有没有断层、色带；「漏光」整屏纯黑，四角留极淡的十字参照线（几秒后自动淡出，不干扰观察），配合暗室环境判断背光有没有漏光、四周是否发灰。`,
+  grid:  `<b>网格触控测试</b>：10×6 共 60 个格子铺满可触控区域，逐格点亮说明这一片触控区域有响应；顶部胶囊实时显示「已测试 X/60」覆盖率。全部点亮后中间弹出完成提示。右上角提供「重置」，方便反复验证某一块死区。`,
+  touch: `<b>多点 / 滑动测试</b>：同样是顶部子标签切换。「多点识别」区域内同时按住多根手指，每个触点会显示编号圆点，顶部统计识别到几点，用来验证多点触控上限（通常 5 点）；「滑动手势」把区域分成上/下/左/右四个方向区，往对应方向划一下就点亮，用来验证边缘滑动和手势响应是否灵敏。全流程测到这里结束——这台机器所有功能都通过触屏操作，没有实体按键，因此不再单独设按键响应测试。`,
+};
+
+function renderSteps() {
+  const bar = document.getElementById('steps');
+  bar.innerHTML = '';
+  steps.forEach((s, i) => {
+    const b = document.createElement('button');
+    b.className = 'step-btn' + (s.id === current ? ' active' : '');
+    b.innerHTML = `<span class="n">${i+1}</span><span>${s.label}</span>`;
+    b.onclick = () => { current = s.id; renderAll(); };
+    bar.appendChild(b);
+  });
+}
+
+function chrome(stepIdx) {
+  return `<div class="chrome-exit">✕ 退出自检</div><div class="chrome-progress">步骤 ${stepIdx+1} / ${steps.length}</div>`;
+}
+
+function renderFrame() {
+  const frame = document.getElementById('frame');
+  const stepIdx = steps.findIndex(s => s.id === current);
+
+  if (current === 'color') {
+    const c = state.colors[state.colorIdx];
+    frame.className = 'device-frame';
+    frame.style.background = c.hex;
+    frame.innerHTML = `
+      ${chrome(stepIdx)}
+      <div class="color-fill">
+        <div class="color-hint" style="color:${c.light ? '#17171c' : '#fff'}; background:${c.light ? 'rgba(255,255,255,.55)' : 'rgba(0,0,0,.32)'}">
+          <span>颜色 ${state.colorIdx+1} / ${state.colors.length} · ${c.name}</span>
+          <span class="color-dots">${state.colors.map((_,i)=>`<span class="${i===state.colorIdx?'on':''}" style="background:${c.light && i!==state.colorIdx ? 'rgba(0,0,0,.25)':''}"></span>`).join('')}</span>
+          <span>轻触切换下一色</span>
+        </div>
+      </div>
+      <div class="flag-btn" style="color:${c.light?'#17171c':'rgba(255,255,255,.8)'}; border-color:${c.light?'rgba(0,0,0,.25)':'rgba(255,255,255,.25)'}">⚑ 标记异常</div>
+    `;
+    frame.querySelector('.color-fill').onclick = () => {
+      state.colorIdx = (state.colorIdx + 1) % state.colors.length;
+      renderFrame();
+    };
+    frame.querySelector('.flag-btn').onclick = (e) => { e.stopPropagation(); alert('已标记「' + c.name + '」屏显示异常，将在检测报告中记录。'); };
+    return;
+  }
+
+  if (current === 'gray') {
+    frame.className = 'device-frame no-pointer';
+    frame.style.background = '#000';
+    if (state.grayTab === 'gray') {
+      let bars = '';
+      for (let i = 0; i <= 9; i++) {
+        const v = Math.round(i * 255 / 9);
+        const light = v > 150;
+        bars += `<div class="gray-bar${light?' light':''}" style="background:rgb(${v},${v},${v})"><span class="lbl">${Math.round(i*100/9)}%</span></div>`;
+      }
+      frame.innerHTML = `
+        ${chrome(stepIdx)}
+        <div class="subtab-row" id="grayTabs">
+          <div class="subtab ${state.grayTab==='gray'?'on':''}" data-t="gray">灰阶</div>
+          <div class="subtab ${state.grayTab==='leak'?'on':''}" data-t="leak">漏光</div>
+        </div>
+        <div class="gray-wrap">${bars}</div>
+      `;
+    } else {
+      frame.innerHTML = `
+        ${chrome(stepIdx)}
+        <div class="subtab-row" id="grayTabs">
+          <div class="subtab ${state.grayTab==='gray'?'on':''}" data-t="gray">灰阶</div>
+          <div class="subtab ${state.grayTab==='leak'?'on':''}" data-t="leak">漏光</div>
+        </div>
+        <div class="leak-wrap">
+          <div class="leak-corner leak-tl"></div><div class="leak-corner leak-tr"></div>
+          <div class="leak-corner leak-bl"></div><div class="leak-corner leak-br"></div>
+          <div class="leak-hint">请在暗环境中观察四角与边缘是否漏光 · 提示将自动淡出</div>
+        </div>
+      `;
+    }
+    frame.querySelectorAll('#grayTabs .subtab').forEach(el => {
+      el.onclick = () => { state.grayTab = el.dataset.t; renderFrame(); };
+    });
+    return;
+  }
+
+  if (current === 'grid') {
+    frame.className = 'device-frame no-pointer';
+    frame.style.background = '';
+    frame.innerHTML = `<div class="bg-shell"></div>${chrome(stepIdx)}`;
+    const testedCount = state.gridCells.filter(Boolean).length;
+    const pct = Math.round(testedCount / state.gridCells.length * 100);
+    frame.innerHTML += `
+      <div class="coverage-pill">覆盖率 <b>${testedCount}/${state.gridCells.length}</b> · ${pct}%</div>
+      <div class="reset-mini" id="gridReset">↺ 重置</div>
+      <div class="grid-wrap" id="gridWrap"></div>
+      <div class="grid-done ${pct===100?'show':''}">✓ 网格触控测试完成，所有区域均有响应</div>
+    `;
+    const wrap = frame.querySelector('#gridWrap');
+    state.gridCells.forEach((on, i) => {
+      const cell = document.createElement('div');
+      cell.className = 'cell' + (on ? ' on' : '');
+      if (on) cell.innerHTML = '<span>✓</span>';
+      cell.onclick = () => { state.gridCells[i] = true; renderFrame(); };
+      wrap.appendChild(cell);
+    });
+    frame.querySelector('#gridReset').onclick = (e) => { e.stopPropagation(); state.gridCells = state.gridCells.map(()=>false); renderFrame(); };
+    return;
+  }
+
+  if (current === 'touch') {
+    frame.className = 'device-frame no-pointer';
+    frame.innerHTML = `<div class="bg-shell"></div>${chrome(stepIdx)}
+      <div class="subtab-row" id="touchTabs">
+        <div class="subtab ${state.touchTab==='multi'?'on':''}" data-t="multi">多点识别</div>
+        <div class="subtab ${state.touchTab==='swipe'?'on':''}" data-t="swipe">滑动手势</div>
+      </div>`;
+    if (state.touchTab === 'multi') {
+      frame.innerHTML += `
+        <div class="touch-count">已识别 <b>${state.touchPoints.length}</b> / 5 点</div>
+        <div class="touch-area" id="touchArea">
+          ${state.touchPoints.length===0 ? '<div class="touch-hint">在此区域内<b>用多根手指同时按住</b><br>用来验证多点触控上限（最多 5 点）</div>' : ''}
+          ${state.touchPoints.map((p,i)=>`<div class="touch-point" style="left:${p.x}%; top:${p.y}%">${i+1}</div>`).join('')}
+        </div>
+      `;
+      frame.querySelector('#touchTabs .subtab[data-t="swipe"]').onclick = () => { state.touchTab='swipe'; renderFrame(); };
+      frame.querySelector('#touchTabs .subtab[data-t="multi"]').onclick = () => { state.touchTab='multi'; renderFrame(); };
+      const area = frame.querySelector('#touchArea');
+      area.onclick = (e) => {
+        const r = area.getBoundingClientRect();
+        const x = (e.clientX - r.left) / r.width * 100;
+        const y = (e.clientY - r.top) / r.height * 100;
+        if (state.touchPoints.length >= 5) state.touchPoints = [];
+        state.touchPoints.push({x, y});
+        renderFrame();
+      };
+    } else {
+      frame.innerHTML += `
+        <div class="swipe-grid">
+          <div class="swipe-zone z-up ${state.swipe.up?'done':''}" data-d="up">↑</div>
+          <div class="swipe-zone z-left ${state.swipe.left?'done':''}" data-d="left">←</div>
+          <div class="swipe-center">从边缘<br>向对应方向<br>划一下</div>
+          <div class="swipe-zone z-right ${state.swipe.right?'done':''}" data-d="right">→</div>
+          <div class="swipe-zone z-down ${state.swipe.down?'done':''}" data-d="down">↓</div>
+        </div>
+      `;
+      frame.querySelector('#touchTabs .subtab[data-t="swipe"]').onclick = () => { state.touchTab='swipe'; renderFrame(); };
+      frame.querySelector('#touchTabs .subtab[data-t="multi"]').onclick = () => { state.touchTab='multi'; renderFrame(); };
+      frame.querySelectorAll('.swipe-zone').forEach(z => {
+        z.onclick = () => { state.swipe[z.dataset.d] = true; renderFrame(); };
+      });
+    }
+    return;
+  }
+}
+
+function renderAll() {
+  renderSteps();
+  renderFrame();
+  document.getElementById('notes').innerHTML = notesText[current];
+}
+
+renderAll();
+</script>
+
+</body>
+</html>

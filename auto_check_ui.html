@@ -117,11 +117,20 @@
     border: 5px solid transparent; border-left-color: var(--text-3);
   }
 
-  .branch-block { display: flex; flex-direction: column; gap: 10px; }
+  .branch-block { display: flex; flex-wrap: wrap; align-items: center; gap: 0; }
+  .branch-stack { display: flex; flex-direction: column; gap: 10px; flex: none; align-self: stretch; justify-content: center; }
   .branch-line { display: flex; align-items: center; }
   .merge-label {
     font-size: 10.5px; color: var(--text-3); padding: 2px 10px; align-self: center;
   }
+  /* 水平合并括号：把上下两条支路在右侧汇成一点，再水平接出去 */
+  .merge-bracket {
+    flex: none; align-self: stretch; width: 22px; margin: 0 4px;
+    border: 2px solid var(--text-3); border-left: none;
+    border-radius: 0 10px 10px 0;
+  }
+  .merge-connector { display: flex; align-items: center; gap: 6px; align-self: center; margin: 0 2px; }
+  .merge-connector .merge-text { font-size: 10.5px; color: var(--text-3); white-space: nowrap; }
 
   .section-tag {
     font-size: 11px; color: var(--text-3); text-transform: uppercase; letter-spacing: 0.06em;
@@ -211,64 +220,64 @@ const N = (icon, label, sub) => ({ icon, label, sub: sub || "", status: "idle" }
 const categories = {
   "热水": {
     rows: [
-      { type: "row", label: "进水与加热（底板 + 冲泡模组）", nodes: [
-        N("🔀","主进水电磁阀"), N("📟","进水压力传感器"), N("🌡️","进水NTC TDS","36℃/400ppm"),
-        N("📟","主进水流量计"), N("⚙️","变压泵"),
-        N("🌡️","冲泡锅炉温度探针1","98℃"), N("🌡️","冲泡锅炉温度探针2","98℃"), N("🔥","加热继电器")
+      { type: "row", label: "进水与加热（底板 + 冲泡模组，与美式/咖啡一致）", nodes: [
+        N("🔀","主进水电磁阀"), N("⚙️","变压泵"), N("📟","进水压力传感器"), N("🌡️","进水NTC TDS","36℃/400ppm"),
+        N("📟","主进水流量计"),
+        N("🔀","冲泡锅炉进水电磁阀"), N("📟","高精度流量计"),
+        N("🌡️","冲泡锅炉温度探针1","98℃"), N("🌡️","冲泡锅炉温度探针2","98℃"), N("🔥","加热继电器"),
+        N("🔀","冲泡电磁阀"), N("🔀","防回流电磁阀")
       ]},
       { type: "row", label: "出水路径（前面板）", nodes: [
-        N("🔀","热水电磁阀"), N("🔀","热水切换电磁阀"), N("☕","热水出口")
+        N("🔀","热水电磁阀"), N("🔀","比例阀","比例20%"), N("🔀","热水电磁阀"), N("🔀","热水切换电磁阀"), N("☕","热水出口")
       ]}
     ]
   },
   "美式": {
     rows: [
-      { type: "row", label: "进水与加热（底板 + 冲泡模组）", nodes: [
-        N("","主进水电磁阀"), N("","进水压力传感器"), N("","进水NTC TDS","36℃/400ppm"),
-        N("","主进水流量计"), N("","变压泵"),
-        N("","冲泡锅炉温度探针1","98℃"), N("","冲泡锅炉温度探针2","98℃"), N("","加热继电器")
+      { type: "row", label: "进水与加热（底板 + 冲泡模组，与咖啡一致）", nodes: [
+        N("","主进水电磁阀"), N("","变压泵"), N("","进水压力传感器"), N("","进水NTC TDS","36℃/400ppm"),
+        N("","主进水流量计"),
+        N("","冲泡锅炉进水电磁阀"), N("","高精度流量计"),
+        N("","冲泡锅炉温度探针1","98℃"), N("","冲泡锅炉温度探针2","98℃"), N("","加热继电器"),
+        N("","冲泡电磁阀"), N("","防回流电磁阀")
       ]},
-      { type: "row", label: "取豆与研磨（豆仓 + 研磨模组，A/B/C/D 四仓位全检）", nodes: [
-        N("","豆仓缺豆信号-A"), N("","研磨粗细电机-A"), N("","研磨电机-A"),
-        N("","豆仓缺豆信号-B"), N("","研磨粗细电机-B"), N("","研磨电机-B"),
-        N("","豆仓缺豆信号-C"), N("","研磨粗细电机-C"), N("","研磨电机-C"),
-        N("","豆仓缺豆信号-D"), N("","研磨粗细电机-D"), N("","研磨电机-D")
+      { type: "parallel", label: "取豆与研磨（豆仓 + 研磨模组，A/B/C/D 四仓位同时进行）", lines: [
+        [ N("","豆仓缺豆信号-A"), N("","研磨粗细电机-A"), N("","研磨电机-A") ],
+        [ N("","豆仓缺豆信号-B"), N("","研磨粗细电机-B"), N("","研磨电机-B") ],
+        [ N("","豆仓缺豆信号-C"), N("","研磨粗细电机-C"), N("","研磨电机-C") ],
+        [ N("","豆仓缺豆信号-D"), N("","研磨粗细电机-D"), N("","研磨电机-D") ]
       ]},
       { type: "row", label: "布粉与称重（萃取-称重模组）", nodes: [
         N("","粉仓震动电机"), N("","下粉仓电机"), N("","称重感应器","20g")
       ]},
       { type: "row", label: "压粉与萃取（萃取模组 + 冲泡模组）", nodes: [
-        N("","摆粉电机(接粉)"), N("","冲泡电磁阀"), N("","压粉电机(压粉)"),
-        N("","防回流电磁阀"), N("","流量计","65ml"), N("","萃取电磁阀")
+        N("","摆粉电机(接粉)"), N("","冲泡电磁阀"), N("","防回流电磁阀"), N("","压粉电机(压粉)"), N("","萃取电磁阀")
       ]},
       { type: "row", label: "浓缩液出品与排渣（萃取模组 + 前面板）", nodes: [
-        N("","出液电磁阀"), N("","出液杆移动电机"), N("","摆粉电机(排粉)")
-      ]},
-      { type: "row", label: "兑入热水稀释（萃取模组 + 冲泡模组 + 前面板）", nodes: [
-        N("","热水电磁阀"), N("","冷水比例阀","比例20%"), N("","热水切换电磁阀")
-      ]},
-      { type: "row", nodes: [ N("","美式出口") ] }
+        N("","出液电磁阀"), N("","出液杆移动电机"), N("","摆粉电机(排粉)"), N("","美式出口")
+      ]}
     ]
   },
   "咖啡": {
     rows: [
-      { type: "row", label: "进水与加热（底板 + 冲泡模组）", nodes: [
-        N("🔀","主进水电磁阀"), N("📟","进水压力传感器"), N("🌡️","进水NTC TDS"),
-        N("📟","主进水流量计"), N("⚙️","变压泵"),
-        N("🌡️","冲泡锅炉温度探针1"), N("🌡️","冲泡锅炉温度探针2"), N("🔥","加热继电器")
+      { type: "row", label: "进水与加热（底板 + 冲泡模组，与美式一致）", nodes: [
+        N("🔀","主进水电磁阀"), N("⚙️","变压泵"), N("📟","进水压力传感器"), N("🌡️","进水NTC TDS","36℃/400ppm"),
+        N("📟","主进水流量计"),
+        N("🔀","冲泡锅炉进水电磁阀"), N("📟","高精度流量计"),
+        N("🌡️","冲泡锅炉温度探针1","98℃"), N("🌡️","冲泡锅炉温度探针2","98℃"), N("🔥","加热继电器"),
+        N("🔀","冲泡电磁阀"), N("🔀","防回流电磁阀")
       ]},
-      { type: "row", label: "取豆与研磨（豆仓 + 研磨模组，A/B/C/D 四仓位全检）", nodes: [
-        N("","豆仓缺豆信号-A"), N("","研磨粗细电机-A"), N("","研磨电机-A"),
-        N("","豆仓缺豆信号-B"), N("","研磨粗细电机-B"), N("","研磨电机-B"),
-        N("","豆仓缺豆信号-C"), N("","研磨粗细电机-C"), N("","研磨电机-C"),
-        N("","豆仓缺豆信号-D"), N("","研磨粗细电机-D"), N("","研磨电机-D")
+      { type: "parallel", label: "取豆与研磨（豆仓 + 研磨模组，A/B/C/D 四仓位同时进行）", lines: [
+        [ N("","豆仓缺豆信号-A"), N("","研磨粗细电机-A"), N("","研磨电机-A") ],
+        [ N("","豆仓缺豆信号-B"), N("","研磨粗细电机-B"), N("","研磨电机-B") ],
+        [ N("","豆仓缺豆信号-C"), N("","研磨粗细电机-C"), N("","研磨电机-C") ],
+        [ N("","豆仓缺豆信号-D"), N("","研磨粗细电机-D"), N("","研磨电机-D") ]
       ]},
       { type: "row", label: "布粉与称重（萃取-称重模组）", nodes: [
         N("📳","粉仓震动电机"), N("⚙️","下粉仓电机"), N("⚖️","称重感应器","20g")
       ]},
       { type: "row", label: "压粉与萃取（萃取模组 + 冲泡模组）", nodes: [
-        N("🎚","摆粉电机(接粉)"), N("🔀","冲泡电磁阀"), N("🎚","压粉电机(压粉)"),
-        N("🔀","防回流电磁阀"), N("📟","流量计","65ml"), N("🔀","萃取电磁阀")
+        N("🎚","摆粉电机(接粉)"), N("🎚","压粉电机(压粉)")
       ]},
       { type: "row", label: "出品与排渣（萃取模组 + 前面板）", nodes: [
         N("🔀","出液电磁阀"), N("⚙️","出液杆移动电机"), N("🎚","摆粉电机(排粉)"), N("☕","咖啡出口")
@@ -278,12 +287,14 @@ const categories = {
   "蒸汽": {
     rows: [
       { type: "row", label: "进水与升温（底板 + 蒸汽模组）", nodes: [
-        N("🔀","主进水电磁阀"), N("📟","进水压力传感器"), N("⚙️","变压泵"),
+        N("🔀","主进水电磁阀"), N("⚙️","变压泵"),
+        /* 隐藏：电磁阀（名称待确认，问陈文堂） N("🔀","电磁阀（名称待确认，问陈文堂）"), */
+        N("📟","进水压力传感器"),
         N("🔀","锅炉进水电磁阀"), N("🌡️","蒸汽锅炉温度探针","98℃"), N("💧","水位探针","高水位"),
         N("🔥","加热继电器"), N("📟","蒸汽压力传感器","1.3bar")
       ]},
       { type: "row", label: "出蒸汽路径（前面板）", nodes: [
-        N("🌡️","蒸汽杆热电偶","56℃"), N("🔀","蒸汽杆电磁阀"), N("☁️","蒸汽出口")
+        N("🔀","特色打奶电磁阀"), N("🔀","特色打奶空气电磁阀"), N("🌡️","蒸汽杆热电偶","56℃"), N("☁️","蒸汽出口")
       ]},
       { type: "row", label: "维护用（常闭，不参与出品）", nodes: [
         N("🔀","锅炉排水电磁阀")
@@ -295,26 +306,21 @@ const categories = {
       { type: "row", label: "蒸汽供给（蒸汽模组）", nodes: [
         N("🔀","锅炉进水电磁阀"), N("🌡️","蒸汽锅炉温度探针"), N("🔥","加热继电器"), N("📟","蒸汽压力传感器")
       ]},
-      { type: "row", label: "进奶与配气（奶沫模组）", nodes: [
-        N("🔀","进奶电磁阀1"), N("🔀","进奶电磁阀2"), N("🌡️","进奶NTC TDS","36℃/400ppm"),
-        N("🔀","热奶空气电磁阀"), N("🔀","热奶空气高频阀"), N("🔀","奶沫蒸汽电磁阀")
-      ]},
+      { type: "branch", label: "进奶与配气（奶沫模组）",
+        a: [ N("🔀","进奶电磁阀1") ],
+        b: [ N("🔀","进奶电磁阀2") ],
+        then: [ N("🔀","冷奶空气高频阀"), N("🔀","奶沫蒸汽电磁阀"), N("🔀","热奶空气高频阀") ]
+      },
       { type: "row", label: "打奶出品（奶沫模组）", nodes: [
         N("⚙️","奶泵","20ml/s"), N("🌡️","出奶NTC TDS","76℃/400ppm"), N("🔀","奶沫电磁阀"), N("🥛","牛奶出口")
       ]}
     ]
   },
   "触摸屏": {
-    independent: true,
     rows: [
       { type: "row", nodes: [
-        N("🖥️","显示模块"), N("🎨","纯色满屏测试"), N("📊","灰阶/漏光测试")
-      ]},
-      { type: "row", nodes: [
+        N("🖥️","显示模块"), N("🎨","纯色满屏测试"), N("📊","灰阶/漏光测试"),
         N("👆","触摸模块"), N("🔲","网格触控测试"), N("✌️","多点/滑动测试")
-      ]},
-      { type: "row", nodes: [
-        N("🔘","实体按键"), N("⏻","按键响应测试")
       ]}
     ]
   }
@@ -496,14 +502,33 @@ function renderCanvas() {
       });
       html += `</div>`;
     } else if (row.type === "branch") {
+      if (row.label) html += `<div class="stage-title" style="margin-bottom:-6px;">${row.label}</div>`;
       html += `<div class="branch-block">`;
+      html += `<div class="branch-stack">`;
       html += `<div class="branch-line">`;
       row.a.forEach((n, i) => { html += nodeHTML(n, "a"+i); if (i < row.a.length-1) html += `<div class="arrow"></div>`; });
       html += `</div>`;
       html += `<div class="branch-line">`;
       row.b.forEach((n, i) => { html += nodeHTML(n, "b"+i); if (i < row.b.length-1) html += `<div class="arrow"></div>`; });
       html += `</div>`;
-      html += `<div class="merge-label">↓ 汇合 → ${row.mergeLabel}</div>`;
+      html += `</div>`;
+      html += `<div class="merge-bracket"></div>`;
+      if (row.then && row.then.length) {
+        html += `<div class="arrow"></div>`;
+        row.then.forEach((n, i) => { html += nodeHTML(n, "t"+i); if (i < row.then.length-1) html += `<div class="arrow"></div>`; });
+      } else if (row.mergeLabel) {
+        html += `<div class="merge-connector"><span class="merge-text">汇合 → ${row.mergeLabel}</span></div>`;
+      }
+      html += `</div>`;
+    } else if (row.type === "parallel") {
+      // 多路（A/B/C/D...）同时进行，并列摆放，互不合并
+      if (row.label) html += `<div class="stage-title" style="margin-bottom:-6px;">${row.label}</div>`;
+      html += `<div class="branch-block">`;
+      row.lines.forEach((line, li) => {
+        html += `<div class="branch-line">`;
+        line.forEach((n, i) => { html += nodeHTML(n, "p"+li+"-"+i); if (i < line.length-1) html += `<div class="arrow"></div>`; });
+        html += `</div>`;
+      });
       html += `</div>`;
     }
   });
@@ -521,7 +546,8 @@ function collectAllNodes() {
   let list = [];
   data.rows.forEach(row => {
     if (row.type === "row") row.nodes.forEach(n => list.push(n));
-    else { row.a.forEach(n => list.push(n)); row.b.forEach(n => list.push(n)); }
+    else if (row.type === "parallel") row.lines.forEach(line => line.forEach(n => list.push(n)));
+    else { row.a.forEach(n => list.push(n)); row.b.forEach(n => list.push(n)); if (row.then) row.then.forEach(n => list.push(n)); }
   });
   return list;
 }
