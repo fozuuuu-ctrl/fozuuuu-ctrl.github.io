@@ -1,0 +1,501 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>K10 通用设置 · 灯光设置</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --bg: #0E0E13;
+    --sidebar: #0E0E13;
+    --panel: #1A1A21;
+    --panel-2: #212129;
+    --hair: #2B2B34;
+    --hair-soft: #232329;
+    --ink: #F2F2F5;
+    --ink-dim: #9C9CA8;
+    --ink-faint: #6B6B76;
+    --accent: #6C63FF;
+    --accent-soft: #6C63FF26;
+    --accent-2: #857BFF;
+    --danger: #F1554C;
+    --track: #2B2B34;
+  }
+  *{ box-sizing:border-box; }
+  html,body{ margin:0; padding:0; }
+  body{
+    background:var(--bg); color:var(--ink);
+    font-family:'Inter',-apple-system,'PingFang SC','Microsoft YaHei',sans-serif;
+    -webkit-font-smoothing:antialiased;
+    min-height:100vh;
+  }
+
+  .app{ display:grid; grid-template-columns: 240px 1fr; min-height:100vh; }
+
+  /* ---------- Sidebar ---------- */
+  .sidebar{ background:var(--sidebar); border-right:1px solid var(--hair-soft); padding:28px 16px; }
+  .logo{ width:56px; height:56px; border-radius:16px; background:#FFFFFF; display:flex; align-items:center; justify-content:center; margin:0 0 32px 4px; }
+  .logo svg{ width:26px; height:26px; }
+  .nav-item{
+    display:flex; align-items:center; gap:12px; padding:13px 14px; border-radius:12px; margin-bottom:6px;
+    color:var(--ink-dim); font-size:14.5px; font-weight:600; cursor:pointer; transition:background .15s ease,color .15s ease;
+  }
+  .nav-item svg{ width:19px; height:19px; flex:none; opacity:.8; }
+  .nav-item:hover{ background:var(--panel); color:var(--ink); }
+  .nav-item.active{ background:var(--accent); color:#fff; }
+  .nav-item.active svg{ opacity:1; }
+
+  /* ---------- Main ---------- */
+  main{ padding:32px 44px 60px; max-width:1040px; }
+  h1{ font-size:24px; font-weight:800; margin:4px 0 22px; letter-spacing:-.01em; }
+
+  .tabs{ display:inline-flex; background:var(--panel); border-radius:12px; padding:5px; gap:2px; margin-bottom:22px; }
+  .tab{
+    appearance:none; border:0; background:transparent; color:var(--ink-dim); font-family:inherit;
+    font-size:14px; font-weight:600; padding:10px 20px; border-radius:9px; cursor:pointer; transition:background .15s ease,color .15s ease;
+  }
+  .tab.active{ background:var(--accent); color:#fff; }
+
+  .panel{ background:var(--panel); border-radius:16px; padding:6px 24px; margin-bottom:20px; }
+  .row{ display:flex; align-items:center; justify-content:space-between; gap:20px; padding:19px 0; border-top:1px solid var(--hair-soft); }
+  .row:first-child{ border-top:0; }
+  .row-label{ font-size:15px; font-weight:600; color:var(--ink); }
+  .row-value{ display:flex; align-items:center; gap:10px; font-size:14.5px; color:var(--ink-dim); }
+  .row-value.link{ cursor:pointer; }
+  .row-value.link:hover{ color:var(--ink); }
+  .chev{ width:16px; height:16px; opacity:.55; flex:none; }
+
+  .field-pill{
+    background:var(--panel-2); border:1px solid var(--hair); color:var(--ink); font-size:14px; font-weight:600;
+    padding:10px 16px; border-radius:10px;
+  }
+
+  /* segmented control (°C/°F) */
+  .segmented{ display:inline-flex; background:var(--panel-2); border-radius:10px; padding:4px; gap:2px; }
+  .seg-btn{
+    appearance:none; border:0; background:transparent; color:var(--ink-dim); font-family:inherit; font-weight:700;
+    font-size:13.5px; padding:8px 16px; border-radius:7px; cursor:pointer; transition:background .15s ease,color .15s ease;
+  }
+  .seg-btn.active{ background:var(--accent); color:#fff; }
+
+  /* toggle switch */
+  .switch{ position:relative; width:46px; height:27px; flex:none; cursor:pointer; }
+  .switch input{ opacity:0; width:0; height:0; position:absolute; }
+  .switch .track{ position:absolute; inset:0; background:var(--track); border-radius:999px; transition:background .15s ease; }
+  .switch .knob{ position:absolute; top:3px; left:3px; width:21px; height:21px; border-radius:50%; background:#fff; transition:transform .15s ease; }
+  .switch input:checked + .track{ background:var(--accent); }
+  .switch input:checked ~ .knob{ transform:translateX(19px); }
+
+  .row-highlight{ background:var(--accent-soft); margin:0 -24px; padding:19px 24px; border-radius:12px; border-top:0 !important; }
+  .row-highlight + .row{ border-top:0; }
+
+  /* ================= Modal ================= */
+  .modal-overlay{
+    position:fixed; inset:0; background:#020203; display:none; align-items:center; justify-content:center;
+    padding:20px; z-index:100;
+  }
+  .modal-overlay.show{ display:flex; }
+  .modal{
+    width:100%; max-width:1080px; max-height:82vh; background:#111116; border:1px solid var(--hair);
+    border-radius:20px; display:flex; flex-direction:column; overflow:hidden; box-shadow:0 30px 90px #000000a0;
+  }
+  .modal-head{ display:flex; align-items:flex-start; justify-content:space-between; gap:16px; padding:22px 26px 18px; border-bottom:1px solid var(--hair-soft); }
+  .modal-head h2{ font-size:21px; font-weight:800; margin:0 0 5px; letter-spacing:-.01em; }
+  .modal-head p{ font-size:12.5px; color:var(--ink-faint); margin:0; max-width:70ch; line-height:1.55; }
+  .modal-close{
+    width:34px; height:34px; border-radius:50%; border:0; background:#26262E; color:var(--ink-dim);
+    display:flex; align-items:center; justify-content:center; cursor:pointer; flex:none; transition:background .15s ease,color .15s ease;
+  }
+  .modal-close:hover{ color:var(--ink); background:#31313B; }
+
+  .modal-body{ display:grid; grid-template-columns:210px 1fr; gap:0; overflow:hidden; flex:1; min-height:0; }
+  @media (max-width:820px){ .modal-body{ grid-template-columns:1fr; } }
+
+  .scene-list{ display:flex; flex-direction:column; gap:4px; padding:18px 14px; overflow-y:auto; }
+  .scene-item{
+    appearance:none; border:1px solid transparent; background:transparent; color:var(--ink-dim); text-align:left; cursor:pointer;
+    padding:10px 12px; border-radius:11px; font-family:inherit; display:flex; align-items:flex-start; gap:10px;
+    transition:background .15s ease,color .15s ease,border-color .15s ease;
+  }
+  .scene-item:hover{ background:var(--panel-2); color:var(--ink); }
+  .scene-item.active{ background:#211F3B; color:var(--ink); border-color:var(--accent); }
+  .scene-item .dot{ width:9px; height:9px; border-radius:50%; margin-top:4px; flex:none; }
+  .scene-item .txt{ display:flex; flex-direction:column; gap:2px; }
+  .scene-item b{ font-size:13.5px; font-weight:700; }
+  .scene-item span{ font-size:11px; color:var(--ink-faint); }
+  .scene-item.active span{ color:var(--accent-2); }
+
+  .light-panel{ padding:18px 26px 22px; overflow-y:auto; }
+  .panel-scene-title{ display:flex; align-items:baseline; gap:9px; margin:0 0 14px; }
+  .panel-scene-title b{ font-size:16px; font-weight:800; }
+  .panel-scene-title span{ font-size:12px; color:var(--ink-faint); }
+
+  .light-cards{ display:grid; grid-template-columns:repeat(3,1fr); gap:12px; align-items:start; }
+  @media (max-width:1000px){ .light-cards{ grid-template-columns:1fr; } }
+
+  .lcard{ background:#17171D; border:1px solid var(--hair); border-radius:14px; padding:16px 16px 18px; }
+  .lcard-head{ display:flex; align-items:center; gap:10px; margin-bottom:14px; }
+  .lcard-icon{ width:30px; height:30px; border-radius:8px; display:flex; align-items:center; justify-content:center; background:#1F1F27; flex:none; }
+  .lcard-title b{ display:block; font-size:13.5px; font-weight:700; }
+  .lcard-title small{ font-size:10.5px; color:var(--ink-faint); }
+  .lrow{ margin-top:13px; }
+  .lrow-label{ font-size:11.5px; color:var(--ink-dim); font-weight:700; margin-bottom:7px; }
+
+  .swatches{ display:flex; align-items:center; gap:7px; flex-wrap:wrap; }
+  .swatch{ width:26px; height:26px; border-radius:7px; border:2px solid transparent; cursor:pointer; position:relative; box-shadow:inset 0 0 0 1px #00000055; }
+  .swatch.selected{ border-color:#fff; }
+  .swatch.fixed{ cursor:not-allowed; }
+  .swatch.custom{ background:conic-gradient(from 180deg,#ff5f6d,#ffc371,#4CAF6D,#43B9C7,#4C8DFF,#b06ab3,#ff5f6d); }
+  .custom-input{ position:absolute; opacity:0; inset:0; width:100%; height:100%; cursor:pointer; }
+  .fixed-color-row{ display:flex; align-items:center; gap:10px; }
+  .fixed-note{ font-size:11.5px; color:var(--ink-faint); }
+
+  .mode-pills{ display:flex; flex-wrap:wrap; gap:6px; }
+  .mode-pill{
+    appearance:none; border:0; background:#1F1F27; color:var(--ink-dim); font-family:inherit; font-weight:700;
+    font-size:12px; padding:7px 12px; border-radius:9px; cursor:pointer; transition:background .15s ease,color .15s ease;
+  }
+  .mode-pill:hover{ background:#282832; color:var(--ink); }
+  .mode-pill.active{ background:var(--accent); color:#fff; }
+
+  .bright-inline{ display:flex; align-items:center; gap:10px; }
+  .bright-inline .sun{ flex:none; opacity:.7; }
+  input[type=range]{ -webkit-appearance:none; appearance:none; width:100%; height:4px; border-radius:3px; outline:none; }
+  input[type=range]{ background: linear-gradient(90deg, #D9A15B 0%, #D9A15B calc(var(--pct,50%)), #33333C calc(var(--pct,50%)), #33333C 100%); }
+  input[type=range]:disabled{ background:#33333C; }
+  input[type=range]::-webkit-slider-thumb{ -webkit-appearance:none; width:17px; height:17px; border-radius:50%; background:#fff; cursor:pointer; margin-top:-6.5px; box-shadow:0 1px 4px #00000055; }
+  input[type=range]:disabled::-webkit-slider-thumb{ background:#9C9CA8; cursor:not-allowed; }
+  .bright-badge{ background:#1F1F27; color:var(--ink); font-size:12.5px; font-weight:700; padding:7px 13px; border-radius:9px; flex:none; min-width:46px; text-align:center; }
+
+  .modal-foot{ display:flex; align-items:center; justify-content:space-between; gap:12px; padding:16px 26px; border-top:1px solid var(--hair-soft); }
+  .btn{
+    appearance:none; border:0; background:#1F1F27; color:var(--ink);
+    padding:11px 18px; border-radius:11px; font-size:13.5px; font-weight:700; cursor:pointer; font-family:inherit;
+    transition:background .15s ease,transform .1s ease;
+  }
+  .btn:hover{ background:#282832; }
+  .btn:active{ transform:translateY(1px); }
+  .btn.primary{ background:var(--accent); color:#fff; }
+  .btn.primary:hover{ filter:brightness(1.08); }
+  .btn-group{ display:flex; gap:10px; }
+
+  .toast{
+    position:fixed; left:50%; bottom:28px; transform:translate(-50%,12px); background:#1E1E26; border:1px solid var(--hair);
+    color:var(--ink); padding:11px 18px; border-radius:9px; font-size:13.5px; font-weight:600; opacity:0; pointer-events:none;
+    transition:opacity .2s ease,transform .2s ease; box-shadow:0 10px 30px #00000066; z-index:200;
+  }
+  .toast.show{ opacity:1; transform:translate(-50%,0); }
+</style>
+</head>
+<body>
+
+<div class="app">
+  <!-- Sidebar -->
+  <aside class="sidebar">
+    <div class="logo">
+      <svg viewBox="0 0 24 24" fill="none"><path d="M12 3 3 10.5V21h6v-6h6v6h6V10.5L12 3Z" fill="#0E0E13"/></svg>
+    </div>
+    <div class="nav-item active">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="3" y="4" width="18" height="13" rx="2"/><path d="M8 21h8M12 17v4"/></svg>
+      通用设置
+    </div>
+    <div class="nav-item">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M12 2v4M12 18v4M4.9 4.9l2.8 2.8M16.3 16.3l2.8 2.8M2 12h4M18 12h4M4.9 19.1l2.8-2.8M16.3 7.7l2.8-2.8"/></svg>
+      数据统计
+    </div>
+    <div class="nav-item">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M4 10h16M6 10V7a2 2 0 0 1 2-2h8a2 2 0 0 1 2 2v3M6 10l1 9h10l1-9"/></svg>
+      产品设置
+    </div>
+    <div class="nav-item">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="12" cy="12" r="3"/><path d="M4 12a8 8 0 0 1 3-6M20 12a8 8 0 0 1-3 6M4 12a8 8 0 0 0 3 6M20 12a8 8 0 0 0-3-6"/></svg>
+      锅炉设置
+    </div>
+    <div class="nav-item">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="12" cy="5" r="2"/><circle cx="6" cy="16" r="2"/><circle cx="18" cy="16" r="2"/><path d="M12 7v4M6 14v-3h12v3"/></svg>
+      研磨设置
+    </div>
+    <div class="nav-item">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="5" y="11" width="14" height="9" rx="2"/><path d="M8 11V8a4 4 0 0 1 8 0v3"/></svg>
+      安全设置
+    </div>
+    <div class="nav-item">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="3" y="4" width="18" height="16" rx="2"/><path d="M3 9h18M8 4v5"/></svg>
+      工程设置
+    </div>
+  </aside>
+
+  <!-- Main -->
+  <main>
+    <h1>通用设置</h1>
+    <div class="tabs">
+      <button class="tab active">基础设置</button>
+      <button class="tab">清洁设置</button>
+      <button class="tab">操作设置</button>
+      <button class="tab">维护设置</button>
+      <button class="tab">关于设备</button>
+    </div>
+
+    <div class="panel">
+      <div class="row">
+        <div class="row-label">时间日期</div>
+        <div class="row-value link">2026/04/13 12:00</div>
+      </div>
+      <div class="row">
+        <div class="row-label">语言</div>
+        <div class="row-value link">简体中文 <svg class="chev" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="m9 18 6-6-6-6"/></svg></div>
+      </div>
+      <div class="row">
+        <div class="row-label">国家</div>
+        <div class="row-value link">中国 <svg class="chev" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="m9 18 6-6-6-6"/></svg></div>
+      </div>
+      <div class="row">
+        <div class="row-label">WiFi</div>
+        <div class="row-value link">Wendougee coffee <svg class="chev" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="m9 18 6-6-6-6"/></svg></div>
+      </div>
+      <div class="row">
+        <div class="row-label">温度单位</div>
+        <div class="segmented">
+          <button class="seg-btn active">℃</button>
+          <button class="seg-btn">℉</button>
+        </div>
+      </div>
+    </div>
+
+    <div class="panel">
+      <div class="row">
+        <div class="row-label">待机</div>
+        <label class="switch"><input type="checkbox" checked><span class="track"></span><span class="knob"></span></label>
+      </div>
+      <div class="row">
+        <div class="row-label">进入待机时间</div>
+        <div class="row-value link">10 min <svg class="chev" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="m9 18 6-6-6-6"/></svg></div>
+      </div>
+      <div class="row">
+        <div class="row-label">导入待机图片</div>
+        <div class="row-value link">支持jpg、jpeg格式，小于5M <svg class="chev" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="m9 18 6-6-6-6"/></svg></div>
+      </div>
+    </div>
+
+    <div class="panel">
+      <div class="row" id="lightSettingsRow" style="cursor:pointer;">
+        <div class="row-label">灯光设置</div>
+        <div class="row-value link">配置各场景灯光灯语 <svg class="chev" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="m9 18 6-6-6-6"/></svg></div>
+      </div>
+    </div>
+  </main>
+</div>
+
+<!-- Light settings modal -->
+<div class="modal-overlay" id="lightModalOverlay">
+  <div class="modal">
+    <div class="modal-head">
+      <div>
+        <h2>灯光设置</h2>
+        <p>为待机、制作中、制作完成、清洗中、清洗完成、异常状态六种场景，分别配置月牙形冲煮灯、照明灯、氛围灯的颜色、模式与亮度。</p>
+      </div>
+      <div class="modal-close" id="modalCloseBtn">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 6 6 18M6 6l12 12"/></svg>
+      </div>
+    </div>
+
+    <div class="modal-body">
+      <div class="scene-list" id="sceneList"></div>
+      <div class="light-panel">
+        <div class="panel-scene-title"><b id="panelSceneName">待机</b><span id="panelSceneSub">空闲 · 无操作</span></div>
+        <div class="light-cards" id="cardsRoot"></div>
+      </div>
+    </div>
+
+    <div class="modal-foot">
+      <button class="btn" id="resetBtn">恢复默认</button>
+      <div class="btn-group">
+        <button class="btn" id="cancelBtn">取消</button>
+        <button class="btn primary" id="saveBtn">保存</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="toast" id="toast">已保存配置</div>
+
+<script>
+const SCENES = [
+  { key:'standby',  name:'待机',     sub:'空闲 · 无操作' },
+  { key:'brewing',  name:'制作中',   sub:'饮品制作进行中' },
+  { key:'complete', name:'制作完成', sub:'饮品制作完成提醒' },
+  { key:'cleaning', name:'清洗中',   sub:'管路清洗执行中' },
+  { key:'cleaned',  name:'清洗完成', sub:'清洗流程结束提醒' },
+  { key:'alarm',    name:'异常状态', sub:'故障 / 报警中' },
+];
+
+const LIGHTS = [
+  { key:'crescent', name:'月牙形冲煮灯', sub:'冲泡头前侧', icon: crescentIcon() },
+  { key:'illum',    name:'照明灯',       sub:'冲泡头两侧', icon: barIcon() },
+  { key:'ambient',  name:'氛围灯',       sub:'机身底部光带', icon: ringIcon() },
+];
+
+const MODES = ['常亮','呼吸','闪烁','跑马灯','常暗'];
+const MODE_DESC = {
+  '常亮':'固定亮度稳定发光。',
+  '呼吸':'亮度周期渐变，约 2.4 秒一次循环。',
+  '闪烁':'1Hz 亮灭切换，用于强提醒场景。',
+  '跑马灯':'色带循环流动，用于进行中的流程提示。',
+  '常暗':'不发光，用于节能或用户主动关闭。'
+};
+// 照明灯受硬件限制：仅支持「常亮/常暗」，颜色固定白色、亮度固定，均不可调节
+const ILLUM_MODES = ['常亮','常暗'];
+const ILLUM_FIXED_COLOR = '#FFFFFF';
+function modesFor(key){ return key === 'illum' ? ILLUM_MODES : MODES; }
+
+const PRESET_COLORS = ['#D9A15B','#6C63FF','#4CAF6D','#43B9C7','#F1554C','#B06AB3','#F2F2F5','#8A9AA8'];
+
+const DEFAULTS = {
+  standby:  { crescent:{color:'#D9A15B',mode:'常亮',brightness:55}, illum:{color:ILLUM_FIXED_COLOR,mode:'常暗',brightness:100}, ambient:{color:'#D9A15B',mode:'呼吸',brightness:35} },
+  brewing:  { crescent:{color:'#6C63FF',mode:'闪烁',brightness:90}, illum:{color:ILLUM_FIXED_COLOR,mode:'常亮',brightness:100}, ambient:{color:'#6C63FF',mode:'常亮',brightness:65} },
+  complete: { crescent:{color:'#4CAF6D',mode:'闪烁',brightness:100}, illum:{color:ILLUM_FIXED_COLOR,mode:'常亮',brightness:100}, ambient:{color:'#4CAF6D',mode:'常亮',brightness:80} },
+  cleaning: { crescent:{color:'#43B9C7',mode:'跑马灯',brightness:80}, illum:{color:ILLUM_FIXED_COLOR,mode:'常亮',brightness:100}, ambient:{color:'#43B9C7',mode:'呼吸',brightness:55} },
+  cleaned:  { crescent:{color:'#4CAF6D',mode:'常亮',brightness:90}, illum:{color:ILLUM_FIXED_COLOR,mode:'常亮',brightness:100}, ambient:{color:'#4CAF6D',mode:'常亮',brightness:70} },
+  alarm:    { crescent:{color:'#F1554C',mode:'闪烁',brightness:100}, illum:{color:ILLUM_FIXED_COLOR,mode:'常亮',brightness:100}, ambient:{color:'#F1554C',mode:'常亮',brightness:90} },
+};
+
+let state = JSON.parse(JSON.stringify(DEFAULTS));
+let activeScene = 'standby';
+
+function crescentIcon(){ return `<svg width="15" height="15" viewBox="0 0 16 16"><path d="M6 1a7 7 0 1 0 0 14 5.5 5.5 0 0 1 0-14Z" fill="#8A83FF"/></svg>`; }
+function barIcon(){ return `<svg width="15" height="15" viewBox="0 0 16 16"><rect x="4" y="1" width="3" height="14" rx="1.5" fill="#8A83FF"/><rect x="9" y="1" width="3" height="14" rx="1.5" fill="#8A83FF" opacity=".55"/></svg>`; }
+function ringIcon(){ return `<svg width="15" height="15" viewBox="0 0 16 16"><rect x="1" y="6" width="14" height="4" rx="2" fill="#8A83FF"/></svg>`; }
+
+function renderSceneList(){
+  const root = document.getElementById('sceneList');
+  root.innerHTML = SCENES.map(s => `
+    <button class="scene-item ${s.key===activeScene?'active':''}" data-scene="${s.key}">
+      <span class="dot" style="background:${state[s.key].crescent.color}"></span>
+      <span class="txt"><b>${s.name}</b><span>${s.sub}</span></span>
+    </button>
+  `).join('');
+  root.querySelectorAll('.scene-item').forEach(btn=>{
+    btn.addEventListener('click', ()=>{ activeScene = btn.dataset.scene; renderAll(); });
+  });
+}
+
+function renderPanelTitle(){
+  const s = SCENES.find(s=>s.key===activeScene);
+  document.getElementById('panelSceneName').textContent = s.name;
+  document.getElementById('panelSceneSub').textContent = s.sub;
+}
+
+function renderCards(){
+  const root = document.getElementById('cardsRoot');
+  root.innerHTML = LIGHTS.map(l=>{
+    const cfg = state[activeScene][l.key];
+    const isIllum = l.key === 'illum';
+    const modeOptions = modesFor(l.key);
+
+    const colorRow = isIllum
+      ? `<div class="lrow"><div class="lrow-label">颜色</div>
+          <div class="fixed-color-row">
+            <div class="swatch fixed" style="background:#FFFFFF;" title="灯珠仅支持白色，不可调节"></div>
+            <span class="fixed-note">灯珠仅支持白色，不可调节</span>
+          </div>
+        </div>`
+      : `<div class="lrow"><div class="lrow-label">颜色</div>
+          <div class="swatches">
+            ${PRESET_COLORS.map(c=>`<div class="swatch ${cfg.color.toLowerCase()===c.toLowerCase()?'selected':''}" style="background:${c}" data-light="${l.key}" data-color="${c}"></div>`).join('')}
+            <div class="swatch custom ${!PRESET_COLORS.some(c=>c.toLowerCase()===cfg.color.toLowerCase())?'selected':''}" style="position:relative;">
+              <input type="color" class="custom-input" data-light="${l.key}" value="${cfg.color}">
+            </div>
+          </div>
+        </div>`;
+
+    const brightRow = isIllum
+      ? `<div class="lrow"><div class="lrow-label">亮度</div>
+          <div class="bright-inline">
+            <span class="sun">${sunIcon()}</span>
+            <input type="range" min="0" max="100" value="100" style="--pct:100%" disabled>
+            <span class="fixed-note" style="white-space:nowrap;">亮度固定，不可调节</span>
+          </div>
+        </div>`
+      : `<div class="lrow"><div class="lrow-label">亮度</div>
+          <div class="bright-inline">
+            <span class="sun">${sunIcon()}</span>
+            <input type="range" min="0" max="100" value="${cfg.brightness}" style="--pct:${cfg.brightness}%" data-light="${l.key}">
+            <div class="bright-badge">${cfg.brightness}%</div>
+          </div>
+        </div>`;
+
+    return `
+    <div class="lcard">
+      <div class="lcard-head">
+        <div class="lcard-icon">${l.icon}</div>
+        <div class="lcard-title"><b>${l.name}</b><small>${l.sub}${isIllum ? ' · 受硬件限制，仅模式可调' : ''}</small></div>
+      </div>
+      ${colorRow}
+      <div class="lrow"><div class="lrow-label">模式</div>
+        <div class="mode-pills">
+          ${modeOptions.map(m=>`<button type="button" class="mode-pill ${m===cfg.mode?'active':''}" data-light="${l.key}" data-mode="${m}">${m}</button>`).join('')}
+        </div>
+      </div>
+      ${brightRow}
+    </div>`;
+  }).join('');
+
+  root.querySelectorAll('.swatch[data-color]').forEach(sw=>{
+    sw.addEventListener('click', ()=>{ state[activeScene][sw.dataset.light].color = sw.dataset.color; renderAll(); });
+  });
+  root.querySelectorAll('.custom-input').forEach(inp=>{
+    inp.addEventListener('input', ()=>{ state[activeScene][inp.dataset.light].color = inp.value; renderAll(); });
+  });
+  root.querySelectorAll('.mode-pill').forEach(btn=>{
+    btn.addEventListener('click', ()=>{
+      state[activeScene][btn.dataset.light].mode = btn.dataset.mode;
+      renderCards();
+    });
+  });
+  root.querySelectorAll('input[type=range]:not(:disabled)').forEach(rng=>{
+    rng.addEventListener('input', ()=>{
+      state[activeScene][rng.dataset.light].brightness = parseInt(rng.value,10);
+      rng.style.setProperty('--pct', rng.value + '%');
+      rng.parentElement.querySelector('.bright-badge').textContent = rng.value + '%';
+    });
+  });
+}
+
+function sunIcon(){ return `<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M4.9 4.9l1.4 1.4M17.7 17.7l1.4 1.4M2 12h2M20 12h2M4.9 19.1l1.4-1.4M17.7 6.3l1.4-1.4"/></svg>`; }
+
+function renderAll(){ renderSceneList(); renderPanelTitle(); renderCards(); }
+
+function openModal(){ document.getElementById('lightModalOverlay').classList.add('show'); renderAll(); }
+function closeModal(){ document.getElementById('lightModalOverlay').classList.remove('show'); }
+
+document.getElementById('lightSettingsRow').addEventListener('click', openModal);
+document.getElementById('modalCloseBtn').addEventListener('click', closeModal);
+document.getElementById('cancelBtn').addEventListener('click', closeModal);
+document.getElementById('lightModalOverlay').addEventListener('click', (e)=>{ if(e.target.id === 'lightModalOverlay') closeModal(); });
+
+document.getElementById('resetBtn').addEventListener('click', ()=>{
+  state = JSON.parse(JSON.stringify(DEFAULTS));
+  renderAll();
+  showToast('已恢复默认灯语');
+});
+document.getElementById('saveBtn').addEventListener('click', ()=>{
+  showToast('已保存配置');
+  setTimeout(closeModal, 500);
+});
+
+let toastTimer;
+function showToast(msg){
+  const t = document.getElementById('toast');
+  t.textContent = msg;
+  t.classList.add('show');
+  clearTimeout(toastTimer);
+  toastTimer = setTimeout(()=> t.classList.remove('show'), 1800);
+}
+
+openModal();
+</script>
+</body>
+</html>
