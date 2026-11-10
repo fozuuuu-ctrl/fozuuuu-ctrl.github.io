@@ -1,0 +1,153 @@
+<!DOCTYPE html>
+<html lang="zh-CN"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover"><title>AI 助手流程（原始方案 · 统一设备界面风格）</title><style>
+:root{--bg:#0a0a0a;--pn:#1c1c1c;--cd:#262626;--bd:#333;--tx:#f2f2f2;--mu:#8d8d8d;--or:#4aa3ff;--ok:#33c36b;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}
+*{box-sizing:border-box}html,body{margin:0;background:var(--bg)}
+body{color:var(--tx);font:14px/1.5 -apple-system,"PingFang SC","Microsoft YaHei",sans-serif}
+.outer{max-width:1500px;margin:0 auto;padding:14px;overflow-x:auto}
+#box{position:relative;min-width:860px;width:100%}
+.stage{position:absolute;left:0;top:0;width:1920px;height:1200px;transform-origin:0 0;background:#000;overflow:hidden;border-radius:24px;font-size:20px}
+.stage>*{position:absolute}
+.av{left:32px;top:44px;width:96px;height:96px;border-radius:50%;background:linear-gradient(135deg,#d8a77c,#2e6f8e)}
+.who{left:152px;top:56px;font-size:30px;white-space:nowrap}.who span{background:#2d6fcb;font-size:19px;padding:1px 10px;border-radius:6px;margin-left:10px}
+.sts{left:152px;top:108px;color:#8a8a8a;font-size:22px;white-space:nowrap}.sts b{color:#3b9bff;font-weight:400;margin-left:46px}
+.tb{top:44px;height:96px;background:#1f1f1f;border-radius:20px;display:flex;align-items:center;justify-content:space-around;font-size:38px;color:#ddd}
+.pl{left:1320px;top:175px;width:562px;height:792px;background:#1f1f1f;border-radius:24px;overflow:hidden}
+.tabs{height:110px;display:flex;gap:42px;align-items:center;padding:0 42px;font-size:30px;color:#999;position:relative}.tabs .a{color:#fff;font-weight:600;border-bottom:4px solid #3b9bff;padding:20px 0 12px}
+.li{display:flex;align-items:center;height:97px;padding:0 20px;gap:18px;font-size:26px}.li.sel{background:#2c2c2c}
+.li .n{width:30px;color:#999;font-size:20px}.li .t{flex:1}.li b{font-weight:400;display:block}.li em{font-style:normal;color:#3b9bff;font-size:18px}.li small{color:#999;font-size:20px}.rb{font-size:38px;color:#ddd;width:52px;text-align:center}
+.cc{left:0;top:175px;width:1300px;height:820px}
+.dc{left:32px;top:991px;width:1240px;height:167px;background:#1f1f1f;border-radius:22px;padding:22px 24px;font-size:23px;color:#ccc}.dc b{display:block;color:#fff;font-size:26px;font-weight:500;margin-bottom:10px}
+.wb{left:1320px;top:991px;width:160px;height:167px;background:#b9d4fb;border-radius:22px;display:grid;place-items:center;font-size:52px;color:#2a4f84}
+.sb{left:1496px;top:991px;width:386px;height:167px;background:#3b9bff;border-radius:22px;overflow:hidden;color:#fff;font-size:38px;display:flex;align-items:center;justify-content:flex-end;padding-right:40px}
+.sb i{position:absolute;left:0;top:0;bottom:0;width:164px;background:#b9c6f0;color:#222;font-style:normal;display:grid;place-items:center;font-size:44px;clip-path:polygon(0 0,100% 0,88% 100%,0 100%)}
+.fab{left:1700px;top:900px;height:68px;padding:0 26px;border-radius:34px;background:#3b9bff;color:#fff;font-size:26px;display:flex;align-items:center;gap:10px;cursor:pointer;box-shadow:0 8px 30px rgba(59,155,255,.45);z-index:3}
+.hint{left:1560px;top:850px;color:#8ab8f0;font-size:20px}
+.scrim{inset:0;background:rgba(0,0,0,.6);backdrop-filter:blur(6px);opacity:0;pointer-events:none;transition:.25s;z-index:5}
+.drawer{right:0;top:0;width:400px;height:857px;zoom:1.4;background:var(--pn);border-left:1px solid var(--bd);display:flex;flex-direction:column;transform:translateX(105%);transition:.28s;z-index:6;font-size:14px}
+.stage.open .scrim{opacity:1;pointer-events:auto}.stage.open .drawer{transform:none}.stage.open .fab,.stage.open .hint{opacity:0}
+.hd{display:flex;gap:10px;align-items:center;padding:12px 14px;border-bottom:1px solid var(--bd)}.hd b{display:block;font-size:14px}.hd small{color:var(--mu);font-size:11px}.hd>div:nth-child(2){flex:1}
+.x{color:var(--mu);cursor:pointer;font-size:16px;padding:4px 6px}
+.ic{width:34px;height:34px;border-radius:10px;display:grid;place-items:center;font-size:16px;flex:none}
+.bd{flex:1;overflow:auto;padding:14px;display:flex;flex-direction:column;gap:10px}
+.msg{background:var(--cd);border-radius:12px;padding:10px 12px;font-size:13px}.me{align-self:flex-end;background:#2b6fe0;color:#fff;max-width:88%}
+.card{background:var(--cd);border:1px solid var(--bd);border-radius:14px;padding:12px}
+.lb{font-size:12px;color:var(--mu);margin:8px 0 4px;display:flex;justify-content:space-between}
+.row{display:flex;flex-wrap:wrap;gap:6px}
+.ch{padding:6px 11px;border:1px solid var(--bd);border-radius:999px;background:var(--pn);font-size:12px;cursor:pointer;color:var(--tx)}
+.ch.on{border-color:var(--or);color:var(--or);background:rgba(59,155,255,.12)}
+.inp{width:100%;padding:9px 10px;border-radius:10px;border:1px solid var(--bd);background:var(--pn);color:var(--tx);font-size:13px}
+.two{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+.btn{border:0;border-radius:14px;padding:11px;font-size:14px;font-weight:600;color:#fff;background:linear-gradient(135deg,#3b9bff,#2b6fe0);cursor:pointer;width:100%}
+.btn.g{background:var(--cd);color:var(--tx);border:1px solid var(--bd);font-weight:500}.btn.p{background:rgba(59,155,255,.14);color:var(--or);border:1px solid rgba(59,155,255,.4)}
+.btns{display:flex;gap:8px}.btns .btn{font-size:13px;padding:10px 6px}
+.ft{display:flex;gap:8px;padding:10px 14px;border-top:1px solid var(--bd)}.ft #ft{flex:1;min-width:0;padding:12px 14px;border:1px solid var(--bd);border-radius:16px;background:var(--cd);color:var(--tx);font:inherit;font-size:13px;outline:0}.ft #ft::placeholder{color:#6f6f6f}.ib svg{width:22px;height:22px;stroke:currentColor;fill:none;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round}.ft .ib.send.on{background:linear-gradient(135deg,#3b9bff,#2b6fe0);border-color:transparent;color:#fff}.rc{display:none;flex-direction:column;gap:10px;padding:14px;border-top:1px solid var(--bd)}.rc.on{display:flex}.rbox{height:88px;border:1px solid #2f4f8f;border-radius:16px;background:var(--cd);display:flex;align-items:center;justify-content:center;gap:12px;font-size:14px}.wv{display:flex;align-items:center;gap:4px;height:34px}.wv i{width:5px;height:8px;border-radius:3px;background:#2f7bff;animation:wv 1s ease-in-out infinite}.wv i:nth-child(2){animation-delay:.15s}.wv i:nth-child(3){animation-delay:.3s}.wv i:nth-child(4){animation-delay:.45s}.wv i:nth-child(5){animation-delay:.6s}@keyframes wv{0%,100%{height:8px}50%{height:30px}}.rbt{display:flex;gap:10px}.rbt .btn{height:50px;border-radius:16px;font-size:15px}.rbt .btn.g{background:#434343;border:0}.ft .ib{width:46px;height:46px;flex:none;border:1px solid var(--bd);border-radius:14px;background:var(--cd);display:grid;place-items:center;font-size:17px;color:#ddd;cursor:pointer}.ft .ib.send{background:#3d3d3d}
+.ld{margin:0;padding:0}.ld li{list-style:none;color:var(--mu);font-size:13px;padding:3px 0}.ld li.d{color:var(--ok)}.ld li.a{color:var(--or)}
+.stg{display:flex;justify-content:space-between;font-size:12px;padding:6px 0;border-top:1px solid var(--bd)}.stg span:last-child{color:var(--or)}
+.sw{display:flex;align-items:center;gap:8px;font-size:12px;color:var(--mu)}.sw input{accent-color:#3b9bff}
+.mod{display:flex;gap:10px;align-items:center;padding:10px;border:1px solid var(--bd);border-radius:14px;background:var(--cd);cursor:pointer;width:100%;color:var(--tx);text-align:left}.mod small{color:var(--mu);display:block;font-size:12px}
+.tag{font-size:11px;color:var(--ok);border:1px solid var(--ok);border-radius:6px;padding:0 5px}
+.steps{display:flex;flex-wrap:wrap;gap:8px;align-items:center;padding:14px 4px}
+.grp{font-size:12px;color:var(--mu);margin:0 2px 0 10px}
+.st{display:flex;gap:6px;align-items:center;padding:7px 12px;border:1px solid var(--bd);border-radius:999px;background:var(--pn);cursor:pointer;font-size:13px;color:var(--tx)}
+.st i{font-style:normal;width:18px;height:18px;border-radius:50%;background:var(--cd);display:grid;place-items:center;font-size:11px;color:var(--mu)}.st.on{border-color:var(--or)}.st.on i{background:var(--or);color:#000}
+.cap{color:var(--mu);font-size:12px;padding:0 4px 14px}
+select.inp{font:inherit;font-size:13px}select.inp option{background:#262626;color:#f2f2f2;font-size:13px}</style></head>
+<body><div class="outer"><div id="box"><div class="stage" id="stage">
+<div class="av"></div><div class="who">June&nbsp;&nbsp;10:29:29<span>SIGMA Σ</span></div><div class="sts">♨ 122 ℃ &nbsp;&nbsp; ◔ 1.4 Bar &nbsp;&nbsp; ◍ 92℃ <b>断开连接</b></div>
+<div class="tb" style="left:1003px;width:607px"><span style="color:#3b9bff">⏻</span><span>🌡</span><span>✦</span><span>⧉</span><span>◎</span></div><div class="tb" style="left:1626px;width:256px"><span>⚙</span><span>⊕</span></div>
+<div class="cc" id="ch"></div>
+<div class="pl"><div class="tabs"><span>我的</span><span class="a">精选</span><span>历史</span></div><div id="lst"></div></div>
+<div class="dc"><b>流速预浸高萃</b>该曲线适用于产于南非的深度烘焙咖啡豆，能够散发出焦糖般的风味。通过中细的研磨，18g 的粉量 1:2 的比例萃 30s。</div>
+<div class="wb">💧</div><div class="sb"><i>M</i>Start&nbsp;☕</div>
+<div class="hint">点击 AI 助手开始 ↓</div><div class="fab" onclick="go(0)">✦ AI 助手</div>
+<div class="scrim" onclick="closeAI()"></div>
+<div class="drawer"><div class="hd" id="hd"></div><div class="bd" id="bd"></div><div class="ft" id="fz"><input id="ft" oninput="draft(this.value)" onkeydown="if(event.key=='Enter')sendM()"><div class="ib" onclick="rec()"><svg viewBox="0 0 24 24"><rect x="9" y="3" width="6" height="11" rx="3"/><path d="M5.5 11a6.5 6.5 0 0 0 13 0M12 17.5V21"/></svg></div><div class="ib send" id="sd" onclick="sendM()"><svg viewBox="0 0 24 24"><path d="M21 3L3 10.5l7 2.5 2.5 7L21 3z"/><path d="M21 3L10 13"/></svg></div></div><div class="rc" id="rc"><div class="rbox"><span class="wv"><i></i><i></i><i></i><i></i><i></i></span><span id="rt">录音中... 0s</span></div><div class="rbt"><button class="btn g" onclick="recEnd(0)">取消</button><button class="btn" onclick="recEnd(1)">完成</button></div></div></div>
+</div></div>
+<div class="steps" id="nav"></div><div class="cap">底图为设备主界面；右下角「AI 助手」悬浮窗点开后进入侧边弹窗，弹窗沿用设备界面的深色卡片、圆角与蓝色主色。</div></div>
+<script>
+const S={type:'AI',style:'均衡柔和',aroma:[],taste:'',adv:false,gen:false,cats:[],cup:'单杯',note:'',say:'',again:0,rec:false,rs:0,origin:'',sel:{},bt:false,tags:[],curve:0};
+const svg=(pts,pts2,w=300,h=130)=>{const m=p=>p.map(([x,y])=>`${(x/33*w).toFixed(0)},${(h-y/12*h).toFixed(0)}`).join(' ');
+return `<svg viewBox="0 0 ${w} ${h}" width="100%" style="display:block"><g stroke="#8883" stroke-dasharray="3 3">${[0,3,6,9,12].map(v=>`<line x1="0" x2="${w}" y1="${h-v/12*h}" y2="${h-v/12*h}"/>`).join('')}</g>${pts2?`<polyline fill="none" stroke="#888" stroke-dasharray="4 3" stroke-width="2" points="${m(pts2)}"/>`:''}<polyline fill="none" stroke="#4aa3ff" stroke-width="3.5" stroke-linejoin="round" points="${m(pts)}"/></svg>`};
+const VAR=[[0,3],[7,3],[9,5],[12,7],[14,8],[28,8],[33,3]],CONST=[[0,9],[33,9]];
+const OLD=[[0,3],[5,3],[8,6],[10,9],[22,9],[25,5],[30,5],[33,3]],NEW=[[0,3],[7,3],[9,5],[11,7],[13,8],[24,8],[26,4],[30,3.5],[33,3]];
+const thumb=(pts,w=60,h=30)=>{const p=3,X=x=>p+x/33*(w-2*p),Y=y=>h-p-y/12*(h-2*p);let d=`M${X(pts[0][0]).toFixed(1)} ${Y(pts[0][1]).toFixed(1)}`;for(let i=1;i<pts.length;i++){const [x0,y0]=pts[i-1],[x1,y1]=pts[i],mx=(X(x0)+X(x1))/2;d+=`C${mx.toFixed(1)} ${Y(y0).toFixed(1)} ${mx.toFixed(1)} ${Y(y1).toFixed(1)} ${X(x1).toFixed(1)} ${Y(y1).toFixed(1)}`}return `<svg viewBox="0 0 ${w} ${h}" width="${w}" height="${h}" style="display:block;flex:none"><path d="${d}" fill="none" stroke="#f5a300" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>`};
+const hd=(c,i,t,s)=>`<div class="ic" style="background:${c}">${i}</div><div><b>${t}</b><small>${s}</small></div>`;
+const HN=hd('linear-gradient(135deg,#3b9bff,#2b6fe0)','✦','AI 新建曲线','根据豆子和目标风味生成曲线'),HO=hd('#2f7bff','⏱','AI 优化曲线','基于反馈调整现有曲线');
+const ch=(a,on,fn)=>`<span class="ch ${on?'on':''}" onclick="${fn}">${a}</span>`;
+const sel=(k,ph,opts)=>`<select class="inp" onchange="S.sel['${k}']=this.value"><option value="">${ph}</option>${opts.map(o=>`<option ${S.sel[k]==o?'selected':''}>${o}</option>`).join('')}</select>`;
+const beans=()=>[S.origin,S.sel.产区,S.sel.烘焙度,S.sel.处理法,S.sel.品种,S.sel.研磨度].filter(Boolean).join(' / ')||'未填写';
+const tagR=r=>r?` <span class="tag">✓ 已识别</span>`:'';
+const bot=t=>`<div class="msg">${t}</div>`;
+const load=(a,b,c,next,back)=>`<div class="card" style="text-align:center"><div class="ic" style="width:48px;height:48px;margin:auto;background:linear-gradient(135deg,#3b9bff,#2b6fe0);font-size:22px">✦</div><ul class="ld" style="text-align:left;margin-top:10px"><li class="d">✓ ${a}</li><li class="a">● ${b}</li><li>○ ${c}</li></ul></div><button class="btn g" onclick="go(${back})">取消</button>`;
+const typeLbl=()=>S.type=='AI'?'AI 自动选择':S.type;
+const genChat=(c)=>{const par=typeLbl()+' / 18g 粉量 / 54g 注水量'+(S.bt?' / 36g 目标液重':''),fl=[S.style,S.aroma.join('、')].filter(Boolean).join(' / '),say=S.say?'<br>• 补充描述：'+S.say:'',fill=['• 萃取参数：18g 粉量 54g 注水量'];if(S.type=='AI')fill.push('• 曲线类型：由 AI 根据豆子和口味选择');if(beans()=='未填写')fill.push('• 咖啡豆：未填写，按通用咖啡豆设计');
+return `<div class="msg me">我已填写：<br>• 咖啡豆：${beans()}<br>• 萃取参数：${par}<br>• 风味偏好：${fl}${say}</div>${bot('让我总结一下配置：<br>• 咖啡豆：'+beans()+'<br>• 萃取参数：'+par+'<br>• 风味偏好：'+fl+say+'<br><br>💡 AI 已为你补充以下推荐值：<br>'+fill.join('<br>')+'<br><br>'+(c?'确认无误后点击“确认生成”，也可以返回修改。':'现在开始为你生成萃取曲线…'))}`};
+const optChat=()=>`<div class="msg me">${S.note?S.note:'我选择了：'+(S.tags.join('、')||'（未选择）')}</div>${bot(S.note?'好的，我会根据你的描述来优化曲线。':'好的，我将根据“'+(S.tags.join('、')||'通用建议')+'”这些反馈来优化你的曲线。')}`;
+const OG=[['口感',['偏苦','偏酸','涩感']],['醇厚度',['太清淡','太厚重','缺乏层次']],['风味',['想要更多花香','想要更多果味','更多甜感','更少焦糊味','更多巧克力感','更多坚果感']],['萃取问题',['萃取过度（偏苦涩）','萃取不足（偏酸薄）','水流不均（通道效应）']]];
+function tgc(c){const i=S.cats.indexOf(c);if(i<0)S.cats.push(c);else{S.cats.splice(i,1);const g=OG.find(x=>x[0]==c)[1];S.tags=S.tags.filter(t=>!g.includes(t))}render()}
+function optGroups(){return `<div class="lb">想优化哪方面？（选填，可多选）</div><div class="row">${OG.map(g=>{const n=g[1].filter(t=>S.tags.includes(t)).length;return ch(g[0]+(n?' · '+n:''),S.cats.includes(g[0]),`tgc('${g[0]}')`)}).join('')}</div>`+OG.filter(g=>S.cats.includes(g[0])).map(g=>`<div class="lb">${g[0]}</div><div class="row">${g[1].map(t=>ch(t,S.tags.includes(t),`tg('tags','${t}')`)).join('')}</div>`).join('')}
+const EX=[['偏苦','偏酸'],['太清淡','太厚重'],['萃取过度（偏苦涩）','萃取不足（偏酸薄）']];
+const AR={'清爽明亮':['果香','甜感','花香'],'均衡柔和':['果香','甜感','坚果香'],'醇厚饱满':['巧克力','甜感','坚果香']};
+const screens=[
+ {g:'入口',n:'AI 助手入口',h:hd('#2f7bff','🤖','AI 助手','专属咖啡助手'),b:()=>`<div style="text-align:center;padding:6px 0"><div class="ic" style="width:56px;height:56px;margin:auto;background:#2f7bff;font-size:26px">🤖</div><b style="font-size:16px;display:block;margin-top:8px">AI 助手</b><div style="color:var(--mu);font-size:12px">我是你的专属咖啡助手，可以帮你创建和优化萃取曲线。</div></div>
+  ${[['AI 新建曲线','根据豆子和目标风味生成曲线','linear-gradient(135deg,#3b9bff,#2b6fe0)','✦',1],['AI 优化曲线','基于反馈调整现有曲线','#2f7bff','⏱',5],['智能客服','咨询设备和使用问题','#22b35e','🎧'],['智能导购','推荐适合的豆子和配件','#a020f0','🛍'],['AI 咖啡师','咖啡知识和冲煮技巧','#e91e8c','☕']].filter(m=>m[4]/* 智能客服、智能导购、AI 咖啡师暂时隐藏 */).map(m=>`<button class="mod" ${m[4]?`onclick="go(${m[4]})"`:''}><div class="ic" style="background:${m[2]}">${m[3]}</div><div><b>${m[0]}</b><small>${m[1]}</small></div></button>`).join('')}`,f:'直接告诉我你想做什么，或点击上方卡片开始'},
+ {g:'AI 新建曲线',n:'填写条件',h:HN,b:()=>`${bot('我将帮你创建一条新的萃取曲线。只需选一个你喜欢的口味，其余交给 AI 就行；也可以直接在下方说出你的想法，或拍照识别豆子。')}${S.rs>=1?bot('正在识别咖啡豆包装信息…'):''}${S.rs>=2?bot('📷 识别成功！已自动填充咖啡豆信息，可在「进阶条件」中查看和修改。'):''}<button class="btn p" onclick="startRec()">📷 拍照识别豆子信息</button>
+  <div class="card"><b>想要什么口味？</b><div class="lb">风味风格</div><div class="row">${['清爽明亮','均衡柔和','醇厚饱满'].map(a=>ch(a,S.style==a,`S.style='${a}';S.aroma=S.aroma.filter(x=>AR['${a}'].includes(x));render()`)).join('')}</div>
+  ${S.style?`<div class="lb">香气偏好（可多选，选填）</div><div class="row">${AR[S.style].map(a=>ch(a,S.aroma.includes(a),`tg('aroma','${a}')`)).join('')}</div>`:''}</div>
+  <div class="card" id="adv"><div onclick="S.adv=!S.adv;render()" style="display:flex;justify-content:space-between;align-items:center;cursor:pointer"><b>进阶条件 <small style="color:var(--mu);font-weight:400">${S.rec?'已识别豆子信息':'选填，AI 会自动补全'}</small></b><span style="color:var(--mu);font-size:12px">${S.adv?'收起 ▲':'展开 ▼'}</span></div>${S.adv?`<div style="font-size:13px;font-weight:600;margin:12px 0 0">曲线设置</div><div class="lb">曲线类型</div><div class="row">${['恒压曲线','变压曲线'].map(t=>ch(t,S.type==t,`S.type=S.type=='${t}'?'AI':'${t}';render()`)).join('')}</div><div style="font-size:11px;color:var(--mu);margin-top:4px">${S.type=='AI'?'不选则由 AI 根据豆子和口味自动选择最合适的曲线类型':S.type=='恒压曲线'?'恒压模式将生成稳定的压力输出，适合追求一致性的萃取':'变压模式将生成分阶段的压力变化，能够更精细地控制萃取过程'}</div>
+  <div class="two"><div><div class="lb">粉量 (g)</div><input class="inp" placeholder="18"></div><div><div class="lb">总注水量 (g)</div><input class="inp" placeholder="54"></div></div>
+  <div class="sw" style="margin-top:8px"><input type="checkbox" ${S.bt?'checked':''} onchange="S.bt=this.checked;render()">使用蓝牙称</div>${S.bt?'<div class="lb">目标咖啡液重 (g)</div><input class="inp" placeholder="36">':''}
+  <div style="font-size:13px;font-weight:600;margin:16px 0 0;padding-top:14px;border-top:1px solid var(--bd)">豆子信息</div><div class="lb">产地${tagR(S.rec)}</div><div class="row">${['埃塞俄比亚','哥伦比亚','巴西','肯尼亚','印度尼西亚','危地马拉'].map(c=>`<span class="ch ${S.origin==c?'on':''}" onclick="S.origin='${c}';render()">${c}</span>`).join('')}</div>
+  <div class="two"><div><div class="lb">产区${tagR(S.rec)}</div>${sel('产区','选择产区',['耶加雪菲','西达摩','古吉','其他'])}</div><div><div class="lb">烘焙度${tagR(S.rec)}</div>${sel('烘焙度','选择烘焙度',['极浅烘','浅烘','中浅烘','中烘','中深烘','深烘'])}</div>
+  <div><div class="lb">处理法${tagR(S.rec)}</div>${sel('处理法','选择处理法',['水洗','日晒','蜜处理','厌氧发酵','其他'])}</div><div><div class="lb">研磨度</div>${sel('研磨度','选择研磨度',['极细','细','中细','中等','中粗'])}</div>
+  <div><div class="lb">品种${tagR(S.rec)}</div><input class="inp" placeholder="例如：74110、瑰夏" value="${S.sel.品种||''}" oninput="S.sel.品种=this.value"></div><div><div class="lb">生产日期${tagR(S.rec)}</div><input class="inp" placeholder="yyyy/mm/日" value="${S.sel.生产日期||''}" oninput="S.sel.生产日期=this.value"></div></div>`:''}</div>
+  <button class="btn" onclick="go(2)">生成曲线 →</button>`,f:'或直接说说你想要的口味…'},
+ {g:'AI 新建曲线',n:'确认配置 · 生成中',auto:()=>S.gen?3:null,h:HN,b:()=>S.gen?`${genChat()}${load('正在分析咖啡豆特性…','根据口味偏好设计曲线…','生成萃取参数和阶段…',3,1)}`:`${genChat(1)}<div class="btns"><button class="btn g" onclick="go(1)">修改条件</button><button class="btn" onclick="S.gen=true;render()">确认生成 →</button></div>`,f:'或直接输入信息…'},
+ {g:'AI 新建曲线',n:'生成结果',h:HN,b:()=>{const v=S.type!='恒压曲线';return `${genChat()}<div id="res"></div>${bot('曲线生成完成！这是为你定制的萃取方案：')}<div class="card"><b>${v?'变压萃取曲线':'恒压萃取曲线'}</b>${svg(v?VAR:CONST)}<div style="font-size:11px;color:var(--mu);text-align:center">时间 (s)</div>
+  <div class="msg" style="margin-top:8px;background:#1b2636">${v?'根据你选择的埃塞俄比亚咖啡豆和“'+S.style+'”风格，我设计了这条变压曲线。预浸泡阶段帮助均匀润湿粉饼，升压阶段逐步提取风味物质，主萃取保持稳定输出，收尾降压避免杂味。这条曲线能够突出你期望的果香、甜感，带来“'+S.style+'”的口感体验。':'根据你的需求，我设计了这条恒压曲线。稳定的压力输出能够持续稳定地萃取咖啡，适合追求一致性的冲煮。这条曲线适合埃塞俄比亚咖啡豆，能够带来“'+S.style+'”的口感。'}</div></div>
+  <div class="lb">曲线名称</div><input class="inp" id="cn" value="${(S.origin||'埃塞俄比亚')+'·'+S.style}"><div class="lb">杯量</div><div class="row" id="cup">${['单杯','双杯'].map(c=>`<span class="ch ${S.cup==c?'on':''}" onclick="S.cup='${c}';document.querySelectorAll('#cup .ch').forEach(e=>e.classList.toggle('on',e.textContent==S.cup))">${c}</span>`).join('')}</div><div style="font-size:11px;color:var(--mu);margin:8px 0 10px">AI 生成的曲线保存后不支持编辑具体参数，仅可修改名称和杯量。</div><div class="btns"><button class="btn" onclick="addGen();alert('已保存到「我的」')">保存曲线</button><button class="btn g" onclick="go(1)">重新生成</button><button class="btn g" onclick="tune()">在此基础上微调</button></div>`},f:'或直接输入信息…'},
+ {g:'AI 优化曲线',n:'选择曲线',h:HO,b:()=>`${bot('请选择要优化的曲线：')}<div class="card" style="padding:4px 12px">${lst.map((r,i)=>`<div onclick="S.curve=${i};S.again=0;go(5)" style="display:flex;gap:10px;align-items:center;padding:10px 0;cursor:pointer;${i?'border-top:1px solid var(--bd)':''}">${thumb(r[4]||SH[i%3],56,28)}<div style="flex:1"><b style="display:block;font-size:13px">${r[0]}</b><small style="color:var(--mu)">${r[3]} · ${r[1]}</small></div><span style="color:${i===S.curve?'var(--or)':'transparent'};font-size:16px">✓</span></div>`).join('')}</div><button class="btn g" onclick="go(5)">返回</button>`,f:'或直接输入你的反馈…'},
+ {g:'AI 优化曲线',n:'选择问题',h:HO,b:()=>`${S.curve<0?`<div class="card" onclick="go(4)" style="display:flex;gap:10px;align-items:center;justify-content:space-between;cursor:pointer;border-style:dashed"><div><b>选择要优化的曲线</b><br><small style="color:var(--mu)">请先选择一条曲线再提交优化</small></div><span style="color:var(--or);font-size:18px">›</span></div>`:`<div class="card" onclick="go(4)" style="display:flex;gap:10px;align-items:center;cursor:pointer">${thumb(lst[S.curve][4]||SH[S.curve%3],64,32)}<div style="flex:1"><small style="color:var(--mu)">正在优化</small><br><b>${lst[S.curve][0]}</b><br><small style="color:var(--mu)">${lst[S.curve][3]}${S.again?' · <span style="color:var(--or)">基于上一轮优化结果</span>':''}</small></div><span style="color:var(--or);font-size:12px;white-space:nowrap">更换 ›</span></div>`}${bot(S.curve<0?'请先选择要优化的曲线。想从哪些方面优化？':'我将帮你优化“'+lst[S.curve][0]+'”。想从哪些方面优化？选择方向后再选具体问题（相反的选项只能选其一）；也可以直接提交，或直接告诉我哪里不满意：')}
+  ${optGroups()}
+  <button class="btn" onclick="${S.curve<0?'go(4)':'submitOpt()'}" ${S.curve<0?'style="opacity:.45"':''}>${S.curve<0?'请先选择要优化的曲线':S.tags.length?'提交优化 →':'获取通用优化建议 →'}</button>`,f:'直接说说哪里不满意，如“太酸了”'},
+ {g:'AI 优化曲线',n:'优化中',auto:7,h:HO,b:()=>`${optChat()}${load('正在分析原曲线参数…','根据反馈调整预浸泡阶段…','优化主萃取压力曲线…',7,5)}`,f:'或直接输入你的反馈…'},
+ {g:'AI 优化曲线',n:'优化结果',h:HO,b:()=>`${optChat()}<div id="res"></div>${bot('优化完成！这是根据你的反馈生成的新曲线：')}<div class="card"><b>优化前后对比</b>${svg(NEW,OLD)}<div style="font-size:11px;color:var(--mu)">┄ 原曲线　<span style="color:var(--or)">━ 优化曲线</span></div>
+  <b style="display:block;margin-top:8px">调整说明</b><div style="font-size:12px;color:var(--mu)">① 适当延长预浸泡，帮助均匀润湿咖啡粉<br>② 略微降低主萃取压力，减少过萃带来的苦味<br>③ 让收尾阶段更平缓地降压，避免杂味萃出</div></div>
+  <div class="btns"><button class="btn" onclick="alert('已保存为新曲线，原曲线保持不变')">保存为新曲线</button><button class="btn g" onclick="if(confirm('将用优化结果覆盖原曲线「'+lst[S.curve][0]+'」，确定吗？'))alert('已覆盖原曲线')">覆盖原曲线</button><button class="btn g" onclick="again()">继续调整</button></div>`,f:'或直接输入你的反馈…'}
+];
+let cur=0,open=false;
+function fillDef(){S.type=S.type||'AI';S.style=S.style||'均衡柔和'}
+function go(i){if(i===2||i===3)fillDef();if(i===2){S.gen=false;S.cup='单杯'}cur=i;open=true;render()}
+function tg(k,t){const a=S[k],i=a.indexOf(t);if(i<0){if(k=='tags')EX.forEach(p=>{if(p.includes(t))p.forEach(o=>{const j=a.indexOf(o);if(j>=0)a.splice(j,1)})});a.push(t)}else a.splice(i,1);render()}
+let at=null;
+function render(){clearTimeout(at);const sc=screens[cur];document.getElementById('hd').innerHTML=sc.h+'<div class="x" onclick="closeAI()">✕</div>';const bd=document.getElementById('bd'),y=bd.scrollTop;bd.innerHTML=sc.b();bd.scrollTop=y;{const r=document.getElementById('res');if(r)setTimeout(()=>r.scrollIntoView({behavior:'smooth',block:'start'}),60);const au=typeof sc.auto=='function'?sc.auto():sc.auto;if(au!=null){setTimeout(()=>bd.scrollTo({top:bd.scrollHeight,behavior:'smooth'}),60);at=setTimeout(()=>{if(open&&cur===screens.indexOf(sc))go(au)},2800)}}document.getElementById('ft').placeholder=sc.f;
+ document.getElementById('stage').classList.toggle('open',open);
+ let last='',h='';screens.forEach((s,i)=>{if(s.g!==last){h+=`<span class="grp">${s.g}</span>`;last=s.g}h+=`<button class="st ${open&&i===cur?'on':''}" onclick="go(${i})"><i>${i+1}</i>${s.n}</button>`});document.getElementById('nav').innerHTML=h}
+function startRec(){if(S.rs===1)return;S.rs=1;S.rec=false;render();const b=document.getElementById('bd');b.scrollTo({top:0,behavior:'smooth'});
+ setTimeout(()=>{S.rs=2;S.rec=true;S.adv=true;S.origin='埃塞俄比亚';Object.assign(S.sel,{产区:'耶加雪菲',烘焙度:'浅烘',处理法:'水洗',品种:'74110',生产日期:'2024/03/15'});render();const a=document.getElementById('adv');if(a)a.scrollIntoView({behavior:'smooth',block:'start'})},1600)}
+let rt=null,rs=0;
+function rec(){rs=0;document.getElementById('rt').textContent='录音中... 0s';document.getElementById('fz').style.display='none';document.getElementById('rc').classList.add('on');clearInterval(rt);rt=setInterval(()=>{rs++;document.getElementById('rt').textContent='录音中... '+rs+'s'},1000)}
+function recEnd(ok){clearInterval(rt);document.getElementById('rc').classList.remove('on');document.getElementById('fz').style.display='flex';if(ok){const i=document.getElementById('ft');i.value='这是通过语音识别的文本内容';draft(i.value);i.focus()}}
+function draft(v){document.getElementById('sd').classList.toggle('on',!!v.trim())}
+function addGen(){const n=(document.getElementById('cn')||{}).value||'新曲线';lst=lst.filter(r=>r[5]!='gen');lst.unshift([n,'AI 生成 / '+S.cup,0,(S.origin?S.origin.slice(0,2):'埃塞')+' 18g',S.type!='恒压曲线'?VAR:CONST,'gen']);S.curve=0;renderLst()}
+function tune(){addGen();S.again=0;S.tags=[];S.cats=[];S.note='';go(5)}
+function submitOpt(){S.note='';go(6)}
+function again(){S.again=1;S.tags=[];S.cats=[];S.note='';go(5)}
+function sendM(){const i=document.getElementById('ft'),v=i.value.trim();if(!v)return;
+ if(cur===1){S.say=v;i.value='';draft('');go(2);return}
+ if(cur===5&&S.curve>=0){S.note=v;S.tags=[];S.cats=[];i.value='';draft('');go(6);return}const b=document.getElementById('bd');b.insertAdjacentHTML('beforeend','<div class="msg me"></div>');b.lastElementChild.textContent=v;i.value='';draft('');b.scrollTo({top:b.scrollHeight,behavior:'smooth'})}
+function closeAI(){if(document.getElementById('rc').classList.contains('on'))recEnd(0);open=false;render()}
+function fit(){const b=document.getElementById('box'),w=b.clientWidth,k=w/1920;document.getElementById('stage').style.transform=`scale(${k})`;b.style.height=(1200*k)+'px'}
+addEventListener('resize',fit);
+let lst=[['流速预浸高萃','变压 36g / 168μm 600RPM',1,'埃塞 18g'],['意式深烘','变压 30g / 60μm 500RPM',1,'巴西 18g'],['拿铁','变压 25g',1,'哥伦比亚 18g'],['手动超浅','自由变压 50ml',0,'埃塞 16g'],['美式','变压 40g',1,'巴西 18g'],['超萃曲线','变压 110ml',0,'肯尼亚 20g'],['浅烘高萃','变压 65ml',0,'埃塞 18g']];
+const SH=[VAR,OLD,NEW];
+function pick(i){S.curve=S.curve===i?-1:i;renderLst()}
+function renderLst(){document.getElementById('lst').innerHTML=lst.map((r,i)=>`<div class="li ${i===S.curve?'sel':''}" onclick="pick(${i})" style="cursor:pointer"><span class="n">${i+1}</span><div class="t"><b>${r[0]}${r[2]?' <em>◉</em>':''}</b><small>${r[1]}</small></div><span class="rb">◎</span><span class="rb">▶</span></div>`).join('')}
+renderLst();
+document.getElementById('lst').innerHTML=lst.map((r,i)=>`<div class="li ${i?'':'sel'}"><span class="n">${i+1}</span><div class="t"><b>${r[0]}${r[2]?' <em>◉</em>':''}</b><small>${r[1]}</small></div><span class="rb">◎</span><span class="rb">▶</span></div>`).join('');
+const grid=(y0,h,lab,c)=>{let g='';for(let k=0;k<=6;k++){const y=y0+h-k*h/6.2;g+=`<line x1="100" x2="1262" y1="${y}" y2="${y}" stroke="#2a2a2a"/><text x="38" y="${y+5}" fill="#777" font-size="16">${(k*2).toFixed(1)}</text>`}
+ for(let t=0;t<=30;t+=5){const x=100+t*38.7;g+=`<text x="${x-6}" y="${y0+h+24}" fill="#777" font-size="16">${t}</text>`}return g+lab};
+document.getElementById('ch').innerHTML=`<svg viewBox="0 0 1300 840" width="1300" height="840">${grid(40,190,'<text x="34" y="226" fill="#3b9bff" font-size="19">压力</text>')}${grid(298,190,'<text x="34" y="474" fill="#d9625b" font-size="19">流速</text><text x="34" y="498" fill="#8fd36b" font-size="19">液速</text>')}${grid(572,190,'<text x="34" y="750" fill="#e8d84a" font-size="19">流量</text><text x="34" y="774" fill="#ddd" font-size="19">液重</text>')}
+<path d="M100 224 H580 V92 H1128 V170 H1262" fill="none" stroke="#3b7fd0" stroke-width="3" stroke-dasharray="9 6"/><path d="M100 465 H580 V474 H1262" fill="none" stroke="#7a3a3a" stroke-width="3" stroke-dasharray="9 6"/></svg>`;
+render();fit();
+</script></body></html>
